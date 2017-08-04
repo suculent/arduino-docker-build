@@ -10,6 +10,7 @@ RUN curl https://downloads.arduino.cc/arduino-1.8.3-linux64.tar.xz > ./arduino-1
  && rm -rf arduino-1.8.3-linux64.tar \
  && mv ./arduino-1.8.3 /opt/arduino \
  && cd /opt/arduino \
+ && ls -la \
  && ./install.sh
 
 RUN mkdir /opt/arduino-firmware
