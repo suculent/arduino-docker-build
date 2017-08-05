@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 cd /opt/arduino-firmware
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -23,5 +21,3 @@ else
   arduino --verbose --pref build.path=".." --verify ./*.ino  
   cat *.txt
 fi
-
-echo "Done."
