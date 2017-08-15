@@ -18,5 +18,5 @@ RUN mkdir /opt/arduino-firmware/test
 WORKDIR /opt/arduino-firmware
 EXPOSE 22
 COPY cmd.sh /opt/
-COPY ./test/test.ino /opt/arduino-firmware/test/test.ino
+COPY * /opt/arduino-firmware/
 CMD /opt/cmd.sh

@@ -14,11 +14,13 @@ if [ ! -z $@ ]; then
   echo "Running Arduino with arguments..."
   arduino "$@"
 else
-  echo "Testing Arduino..."
+  echo "Building for Arduino..."
   cd *
   pwd
   ls
   arduino --verbose --pref build.path=".." --verify ./*.ino
+  ls
   ls ..
   cat ../*.txt
+  cat *.txt
 fi
