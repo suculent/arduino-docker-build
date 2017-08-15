@@ -22,7 +22,7 @@ else
   mkdir ../build
   cp *.hex ../build/
   echo "Seaching for LINT results..."
-  if [ -f "./*.txt" ];
+  if [ -f "./*.txt" ]; then
     cat *.txt
     cp *.txt ../build/
   fi
