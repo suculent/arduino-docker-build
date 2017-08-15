@@ -20,8 +20,6 @@ else
   ls
   arduino --verbose --pref build.path=".." --verify ./*.ino
   ls
-  ls ..
   echo "Seaching for LINT results..."
-  cat ../*.txt
   cat *.txt
 fi
