@@ -24,6 +24,8 @@ else
   echo "Seaching for LINT results..."
   if [ -f "./*.txt" ]; then
     cat *.txt
-    cp *.txt ../build/
+    cp *.txt ../build/    
   fi
+  echo "Build artefacts in $(pwd):"
+  ls ../build
 fi
