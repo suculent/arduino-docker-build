@@ -19,6 +19,6 @@ RUN mkdir /opt/arduino-firmware/build
 WORKDIR /opt/arduino-firmware
 EXPOSE 22
 COPY cmd.sh /opt/
-COPY * /opt/arduino-firmware
-COPY * /opt/arduino-firmware/build
+COPY * /opt/arduino-firmware/
+COPY * /opt/arduino-firmware/build/
 CMD /opt/cmd.sh
