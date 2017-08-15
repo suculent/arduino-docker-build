@@ -26,9 +26,10 @@ else
     cp "../lint.txt" ../../lint.txt
   fi
   echo "Build artefacts in $(pwd):"
-  cd ../../build
-  cp ./*.with_bootloader.hex ../../firmware.bin
-  cp ./*.elf ../../
+  #cd ../../build
+  #cp ./*.with_bootloader.hex ../../firmware.bin
+  #cp ./*.elf ../../
+  #cd ../../
   pwd
   ls
 fi
