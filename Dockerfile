@@ -13,12 +13,10 @@ RUN curl https://downloads.arduino.cc/arduino-1.8.3-linux64.tar.xz > ./arduino-1
  && ls -la \
  && ./install.sh
 
-RUN mkdir /opt/arduino-firmware
-RUN mkdir /opt/arduino-firmware/test
-RUN mkdir /opt/arduino-firmware/build
-WORKDIR /opt/arduino-firmware
+RUN mkdir /opt/workspace
+RUN mkdir /opt/workspace/test
+RUN mkdir /opt/workspace/build
+WORKDIR /opt/workspace
 EXPOSE 22
 COPY cmd.sh /opt/
-COPY * /opt/arduino-firmware/
-COPY * /opt/arduino-firmware/build/
 CMD /opt/cmd.sh

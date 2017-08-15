@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd /opt/arduino-firmware
+cd /opt/workspace
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
 
@@ -11,10 +11,10 @@ if [ -z $DISPLAY ]; then
 fi
 
 if [ ! -z $@ ]; then
-  echo "Running Arduino with arguments..."
+  echo "Running from Docker for Arduino with arguments..."
   arduino "$@"
 else
-  echo "Building for Arduino..."
+  echo "Building from Docker for Arduino..."
   #cd *
   pwd
   ls
