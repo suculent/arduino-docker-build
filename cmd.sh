@@ -20,12 +20,14 @@ else
   arduino --verbose --pref build.path=".." --verify ./*.ino
   ls
   mkdir ../build
-  cp *.hex ../build/
+  cp ./*.hex ../build/
   echo "Seaching for LINT results..."
   if [ -f "./*.txt" ]; then
     cat *.txt
-    cp *.txt ../build/    
+    cp *.txt ../build/
   fi
   echo "Build artefacts in $(pwd):"
-  ls ../build
+  cd ../build
+  pwd
+  ls
 fi
