@@ -20,6 +20,7 @@ else
   ls
   mkdir ../../build
   arduino --verbose --pref build.path="../../build" --verify ./*.ino
+  RESULT=$?  
   echo "Seaching for LINT results..."
   if [ -f "../lint.txt" ]; then
     cat "../lint.txt"
@@ -32,4 +33,5 @@ else
   #cd ../../
   pwd
   ls
+  exit $RESULT
 fi
