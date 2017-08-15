@@ -15,20 +15,19 @@ if [ ! -z $@ ]; then
   arduino "$@"
 else
   echo "Building for Arduino..."
-  cd *
+  #cd *
   pwd
   ls
-  arduino --verbose --pref build.path=".." --verify ./*.ino
-  ls
   mkdir ../../build
-  cp ./*.hex ../../build/
+  arduino --verbose --pref build.path="../../build" --verify ./*.ino
+  #cp ./*.hex ../../build/
   echo "Seaching for LINT results..."
   if [ -f "../lint.txt" ]; then
     cat "../lint.txt"
     cp "../lint.txt" ../../build/
   fi
   echo "Build artefacts in $(pwd):"
-  cd ../build
+  cd ../../build  
   pwd
   ls
 fi
