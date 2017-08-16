@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
-#set +e
 
 set -e
+set +e # skip errors
 
 # Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
 # - KEY=<value>
@@ -15,6 +15,25 @@ else
   true
 fi
 
+#
+# Fetch libraries
+#
+
+if [[ ! -d /root/Arduino/hardware ]]; then
+  mkdir -p /root/Arduino/hardware/esp8266com
+  cd /root/Arduino/hardware/esp8266com
+  git clone https://github.com/esp8266/Arduino.git esp8266
+  cd esp8266/tools
+  python get.py
+fi
+
+if [[ ! -d /root/Arduino/libraries ]]; then
+  mkdir -p /root/Arduino/libraries
+  cd /root/Arduino/libraries
+  #git clone https://github.com/suculent/thinx-lib-esp8266-arduinoc
+  arduino --install-library "THiNX"
+fi
+
 cd /opt/workspace
 
 #
@@ -22,6 +41,11 @@ cd /opt/workspace
 #
 
 BUILD_DIR=/opt/workspace/build
+if [[ -d $BUILD_DIR ]]; then
+  rm -rf $BUILD_DIR
+fi
+mkdir $BUILD_DIR
+
 RESULT=1
 
 if [ -z $DISPLAY ]; then
@@ -38,7 +62,7 @@ if [ ! -z $@ ]; then
   arduino "$@"
 else
   echo "Building from Docker for Arduino..."
-  arduino --verbose --pref build.path="." --verify ./*.ino
+  arduino --verbose --pref build.path="$BUILD_DIR" --verify ./*.ino
   RESULT=$?
 fi
 
@@ -49,11 +73,6 @@ fi
 #
 # Export artefacts
 #
-
-if [[ -d $BUILD_DIR ]]; then
-  rm -rf $BUILD_DIR
-fi
-mkdir build
 
 echo "Seaching for LINT results..."
 if [ -f "../lint.txt" ]; then
