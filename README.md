@@ -34,11 +34,11 @@ Follow the instructions at [https://docs.docker.com/get-started/](https://docs.d
 
 2. Insert your IP address here to display Arduino IDE using X11/socat
 
-  ``docker run --rm -ti -e DISPLAY=192.168.1.10:0 -v `pwd`:/opt/arduino-builder suculent/arduino-docker-build```
+  ``docker run --rm -ti -e DISPLAY=192.168.1.10:0 -v `pwd`:/opt/workspace suculent/arduino-docker-build```
 
 3. Start terminal and change to the your Arduino project repository (that contains mandatory directory containing your .ino file). Then run:
 
-``docker run --rm -ti -v `pwd`:/opt/arduino-builder suculent/arduino-docker-build``
+``docker run --rm -ti -v `pwd`:/opt/workspace suculent/arduino-docker-build``
 
 Depending on the performance of your system it takes 1-3min until the compilation finishes. The first time you run this it takes longer because Docker needs to download the image and create a container.
 
