@@ -23,6 +23,13 @@ if [ -z "$BOARD" ]; then
   fi
 fi
 
+if [ -z "$FLASH_LD" ]; then
+  echo "Using default flash_ld: d1_mini.build.flash_ld=eagle.flash.4m1m.ld"
+else
+  echo "Using custom flash_ld: $FLASH_LD"
+  echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
+fi
+
 cd /opt/workspace
 
 #
@@ -45,6 +52,8 @@ fi
 
 echo "Current directory: $(pwd)"
 ls
+
+arduino --install-library "THiNX"
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."

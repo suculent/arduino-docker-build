@@ -33,12 +33,6 @@ RUN mkdir -p /root/Arduino/hardware/esp8266com \
   && python get.py \
   && echo "d1_mini.build.flash_ld=eagle.flash.4m1m.ld" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
 
-RUN  mkdir -p /root/Arduino/libraries \
-  && cd /root/Arduino/libraries \
-  && arduino --install-library "THiNX"
-  
-  # git clone https://github.com/suculent/thinx-lib-esp8266-arduinoc
-
 WORKDIR /opt/workspace
 EXPOSE 22
 COPY cmd.sh /opt/
