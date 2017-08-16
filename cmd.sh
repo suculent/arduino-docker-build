@@ -23,25 +23,6 @@ if [ -z "$BOARD" ]; then
   fi
 fi
 
-#
-# Fetch libraries
-#
-
-if [[ ! -d /root/Arduino/hardware ]]; then
-  mkdir -p /root/Arduino/hardware/esp8266com
-  cd /root/Arduino/hardware/esp8266com
-  git clone https://github.com/esp8266/Arduino.git esp8266
-  cd esp8266/tools
-  python get.py
-fi
-
-if [[ ! -d /root/Arduino/libraries ]]; then
-  mkdir -p /root/Arduino/libraries
-  cd /root/Arduino/libraries
-  #git clone https://github.com/suculent/thinx-lib-esp8266-arduinoc
-  arduino --install-library "THiNX"
-fi
-
 cd /opt/workspace
 
 #
