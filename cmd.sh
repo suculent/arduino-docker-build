@@ -15,6 +15,14 @@ else
   true
 fi
 
+if [ -z "$BOARD" ]; then
+  BOARD="esp8266com:esp8266:d1_mini"
+  echo "BOARD not defined, defaulting to $BOARD"
+  if [ ! -f .board ]; then
+    echo "You may store your desired value inside .board file in your repository."
+  fi
+fi
+
 #
 # Fetch libraries
 #
@@ -62,7 +70,7 @@ if [ ! -z $@ ]; then
   arduino "$@"
 else
   echo "Building from Docker for Arduino..."
-  arduino --verbose --pref build.path="$BUILD_DIR" --verify ./*.ino
+  arduino --verbose --pref build.path="$BUILD_DIR" --board $BOARD --verify ./*.ino
   RESULT=$?
 fi
 
