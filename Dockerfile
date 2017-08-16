@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
   xz-utils \
   gcc \
   curl \
-  xvfb
+  xvfb \
+  python python-pip python-dev build-essential
 
 RUN curl https://downloads.arduino.cc/arduino-1.8.3-linux64.tar.xz > ./arduino-1.8.3-linux64.tar.xz \
  && unxz ./arduino-1.8.3-linux64.tar.xz \
