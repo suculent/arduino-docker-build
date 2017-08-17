@@ -2,6 +2,27 @@
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
 
+parse_yaml() {
+    local prefix=$2
+    local s
+    local w
+    local fs
+    s='[[:space:]]*'
+    w='[a-zA-Z0-9_]*'
+    fs="$(echo @|tr @ '\034')"
+    sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s[:-]$s\(.*\)$s\$|\1$fs\2$fs\3|p" "$1" |
+    awk -F"$fs" '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+        if (length($3) > 0) {
+            vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+            printf("%s%s%s=(\"%s\")\n", "'"$prefix"'",vn, $2, $3);
+        }
+    }' | sed 's/_=/+=/g'
+}
+
 set -e
 set +e # skip errors
 
@@ -36,6 +57,21 @@ cd /opt/workspace
 # Build
 #
 
+# Parse thinx.yml config
+
+if [[ -f "thinx.yml" ]]; then
+  echo "Reading thinx.yml:"
+  eval $(parse_yaml thinx.yml)
+  BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
+  if [[ ! -z ${arduino_flash_ld} ]]; then
+  	FLASH_LD="${arduino_board}.build.flash_ld=${arduino_flash_ld}"
+  	echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
+  fi
+  echo "- board: $BOARD"
+  echo "- libs: ${arduino_libs[@]}"  
+  echo "- flash_ld: $FLASH_LD"
+fi
+
 BUILD_DIR=/opt/workspace/build
 if [[ -d $BUILD_DIR ]]; then
   rm -rf $BUILD_DIR
@@ -53,7 +89,15 @@ fi
 echo "Current directory: $(pwd)"
 ls
 
-arduino --install-library "THiNX"
+# Use default library if none set in thinx.yml
+if [[ -z ${arduino_libs} ]]; then
+	arduino_libs="THiNX"
+fi
+
+# Instal managed libraries from thinx.yml
+for lib in "${arduino_libs[@]}" do
+	arduino --install-library $lib
+done
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."
