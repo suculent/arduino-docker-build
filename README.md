@@ -15,8 +15,7 @@ Run the [Arduino](http://arduino.cc) command-line builder in a docker container.
 
   They don't need full control over the complete tool chain and don't want to setup a Linux VM with the build environment.
 
-**This image has been created for purposes of the THiNX IoT management platform.**
-
+**This image has been created for purposes of the [THiNX OpenSource IoT management platform](https://thinx.cloud).**
 
 ## Usage
 
