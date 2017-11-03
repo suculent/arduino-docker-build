@@ -96,7 +96,7 @@ fi
 
 # Install managed libraries from thinx.yml
 for lib in "${arduino_libs[@]}" do
-	arduino --install-library $lib
+	/opt/arduino/arduino --install-library $lib
 done
 
 # Install own libraries (overwriting managed libraries)
@@ -107,10 +107,10 @@ fi
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."
-  arduino "$@"
+  /opt/arduino/arduino "$@"
 else
   echo "Building from Docker for Arduino..."
-  arduino --verbose --pref build.path="$BUILD_DIR" --board $BOARD --verify ./*.ino
+  /opt/arduino/arduino --verbose --pref build.path="$BUILD_DIR" --board $BOARD --verify ./*.ino
   RESULT=$?
 fi
 
