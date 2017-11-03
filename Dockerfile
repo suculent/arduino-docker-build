@@ -14,12 +14,12 @@ RUN apt-get update && apt-get install -y \
   xvfb \
   python python-pip python-dev build-essential
 
-RUN curl https://downloads.arduino.cc/arduino-1.8.3-linux64.tar.xz > ./arduino-1.8.3-linux64.tar.xz \
- && unxz ./arduino-1.8.3-linux64.tar.xz \
+RUN curl https://downloads.arduino.cc/arduino-1.8.5-linux64.tar.xz > ./arduino-1.8.5-linux64.tar.xz \
+ && unxz ./arduino-1.8.5-linux64.tar.xz \
  && ls -la \
- && tar -xvf arduino-1.8.3-linux64.tar \
- && rm -rf arduino-1.8.3-linux64.tar \
- && mv ./arduino-1.8.3 /opt/arduino \
+ && tar -xvf arduino-1.8.5-linux64.tar \
+ && rm -rf arduino-1.8.5-linux64.tar \
+ && mv ./arduino-1.8.5 /opt/arduino \
  && cd /opt/arduino \
  && ls -la \
  && ./install.sh
