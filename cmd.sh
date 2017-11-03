@@ -68,7 +68,7 @@ if [[ -f "thinx.yml" ]]; then
   	echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
   fi
   echo "- board: $BOARD"
-  echo "- libs: ${arduino_libs[@]}"  
+  echo "- libs: ${arduino_libs[@]}"
   echo "- flash_ld: $FLASH_LD"
 fi
 
@@ -94,10 +94,16 @@ if [[ -z ${arduino_libs} ]]; then
 	arduino_libs="THiNX"
 fi
 
-# Instal managed libraries from thinx.yml
+# Install managed libraries from thinx.yml
 for lib in "${arduino_libs[@]}" do
 	arduino --install-library $lib
 done
+
+# Install own libraries (overwriting managed libraries)
+if [[ -d "./lib" ]]; then
+    echo "Copying user libraries..."
+    cp -vfR ./lib/** /root/Arduino/libraries
+fi
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."

@@ -55,6 +55,10 @@ If the Windows path contains spaces it would have to be wrapped in quotes as usu
 
 `docker run --rm -it -v "//c/Users/monster tune/<arduino-builder>"/opt/arduino-builder suculent/arduino-docker-build``
 
+#### User libraries
+
+In case there is a `lib` folder next to your `.ino` file, it will be copied to `../Arduino/libraries` folder from your repository.
+
 #### Output
 The firmware file is created in the `bin` sub folder of your root directory. You will also find a mapfile in the `bin` folder with the same name as the firmware file but with a `.map` ending.
 
