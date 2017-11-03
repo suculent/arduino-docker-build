@@ -2,6 +2,8 @@
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
 
+chmod +x /opt/arduino/arduino
+
 parse_yaml() {
     local prefix=$2
     local s
@@ -95,7 +97,7 @@ if [[ -z ${arduino_libs} ]]; then
 fi
 
 # Install managed libraries from thinx.yml
-for lib in "${arduino_libs[@]}" do
+for lib in "${arduino_libs[@]}"; do
 	/opt/arduino/arduino --install-library $lib
 done
 
