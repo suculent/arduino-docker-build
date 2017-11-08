@@ -32,6 +32,7 @@ RUN mkdir -p /root/Arduino/hardware/esp8266com \
   && cd esp8266/tools \
   && python get.py \
   && echo "d1_mini.build.flash_ld=eagle.flash.4m1m.ld" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt/workspace
 EXPOSE 22
