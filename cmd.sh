@@ -38,21 +38,6 @@ else
   true
 fi
 
-if [ -z "$BOARD" ]; then
-  BOARD="esp8266com:esp8266:d1_mini"
-  echo "BOARD not defined, defaulting to $BOARD"
-  if [ ! -f .board ]; then
-    echo "You may store your desired value inside .board file in your repository."
-  fi
-fi
-
-if [ -z "$FLASH_LD" ]; then
-  echo "Using default flash_ld: d1_mini.build.flash_ld=eagle.flash.4m1m.ld"
-else
-  echo "Using custom flash_ld: $FLASH_LD"
-  echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
-fi
-
 cd /opt/workspace
 
 #
