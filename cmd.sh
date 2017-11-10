@@ -44,12 +44,10 @@ cd /opt/workspace
 # Build
 #
 
-# TODO: Add to config
+# Parse thinx.yml config
 
 F_CPU=80
 FLASH_SIZE="4M"
-
-# Parse thinx.yml config
 
 if [[ -f "thinx.yml" ]]; then
   echo "Reading thinx.yml:"
