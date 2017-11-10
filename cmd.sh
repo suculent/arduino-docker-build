@@ -44,6 +44,11 @@ cd /opt/workspace
 # Build
 #
 
+# TODO: Add to config
+
+F_CPU=80
+FLASH_SIZE="4M"
+
 # Parse thinx.yml config
 
 if [[ -f "thinx.yml" ]]; then
@@ -54,9 +59,19 @@ if [[ -f "thinx.yml" ]]; then
   	FLASH_LD="${arduino_board}.build.flash_ld=${arduino_flash_ld}"
   	echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
   fi
+
+  if [[ ! -z ${arduino_flash_size} ]]; then
+    FLASH_SIZE="${arduino_flash_size}"
+  fi
+  if [[ ! -z ${arduino_f_cpu} ]]; then
+    F_CPU="${arduino_f_cpu}"
+  fi
+
   echo "- board: $BOARD"
   echo "- libs: ${arduino_libs[@]}"
   echo "- flash_ld: $FLASH_LD"
+  echo "- f_cpu: $F_CPU"
+  echo "- flash_size: $FLASH_SIZE"
 fi
 
 BUILD_DIR=/opt/workspace/build
@@ -97,7 +112,7 @@ if [ ! -z $@ ]; then
   /opt/arduino/arduino "$@"
 else
   echo "Building from Docker for Arduino..."
-  /opt/arduino/arduino --verbose --pref build.path="$BUILD_DIR" --pref build.f_cpu=80 --board $BOARD --verify ./*.ino
+  /opt/arduino/arduino --verbose --pref build.path="$BUILD_DIR" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD --verify ./*.ino
   RESULT=$?
 fi
 
