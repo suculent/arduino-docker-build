@@ -116,10 +116,6 @@ else
   RESULT=$?
 fi
 
-if [[ $RESULT==1 ]]; then
-  exit $RESULT
-fi
-
 #
 # Export artefacts
 #
@@ -144,4 +140,9 @@ if [[ -f *.elf ]]; then
   cp -vf *.elf $BUILD_DIR
 fi
 
-exit $RESULT
+# Report build status using logfile
+if [[ $RESULT == 0 ]]; then
+  echo "THiNX BUILD SUCCESSFUL."
+else
+  echo "THiNX BUILD FAILED: $?"
+fi
