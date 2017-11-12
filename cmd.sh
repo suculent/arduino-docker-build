@@ -25,7 +25,6 @@ parse_yaml() {
     }' | sed 's/_=/+=/g'
 }
 
-set -e
 set +e # skip errors
 
 # Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
@@ -104,6 +103,9 @@ if [[ -d "./lib" ]]; then
     echo "Copying user libraries..."
     cp -vfR ./lib/** /root/Arduino/libraries
 fi
+
+# exit on error
+set -e
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."
