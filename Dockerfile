@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
   gcc \
   curl \
   xvfb \
-  python python-pip python-dev build-essential
+  python python-pip python-dev build-essential \
+  libncurses-dev flex bison gperf python-serial
 
 RUN curl https://downloads.arduino.cc/arduino-1.8.5-linux64.tar.xz > ./arduino-1.8.5-linux64.tar.xz \
  && unxz ./arduino-1.8.5-linux64.tar.xz \
@@ -25,6 +26,14 @@ RUN curl https://downloads.arduino.cc/arduino-1.8.5-linux64.tar.xz > ./arduino-1
  && ./install.sh
 
 RUN mkdir /opt/workspace
+
+RUN mkdir -p /root/Arduino/hardware/espressif \
+ && cd ~/Arduino/hardware/espressif \
+ && git clone https://github.com/espressif/arduino-esp32.git esp32 \
+ && cd esp32 \
+ && git submodule update --init --recursive \
+ && cd tools \
+ && python get.py  
 
 RUN mkdir -p /root/Arduino/hardware/esp8266com \
   && cd /root/Arduino/hardware/esp8266com \

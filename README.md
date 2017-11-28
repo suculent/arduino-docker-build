@@ -2,7 +2,7 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/suculent/arduino-docker-build.svg)](https://hub.docker.com/r/suculent/arduino-docker-build/) [![Docker Stars](https://img.shields.io/docker/stars/suculent/arduino-docker-build.svg)](https://hub.docker.com/r/suculent/arduino-docker-build/) [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/suculent/arduino-docker-build/blob/master/LICENSE)
 
-Run the [Arduino](http://arduino.cc) command-line builder in a docker container. This image will take it from there and turn your Arduino project into a binary which you then can [flash to the ESP8266](http://nodemcu.readthedocs.org/en/dev/en/flash/).
+Run the [Arduino](http://arduino.cc) command-line builder in a docker container. This image will take it from there and turn your Arduino project into a binary which you then can [flash to the ESP8266/ESP32](http://nodemcu.readthedocs.org/en/dev/en/flash/).
 
 
 ## Target audience
@@ -68,9 +68,9 @@ You can pass the following optional parameters to the Docker build like so `dock
 - `WORKDIR` Just an parametrization example, will deprecate or be used for additional libraries.
 
 ### Flashing the built binary
-There are several [tools to flash the firmware](http://nodemcu.readthedocs.org/en/dev/en/flash/) to the ESP8266. If you were to use [esptool](https://github.com/themadinventor/esptool) (like I do) you'd run:
+There are several [tools to flash the firmware](http://nodemcu.readthedocs.org/en/dev/en/flash/) to the ESP8266/ESP32. If you were to use [esptool](https://github.com/themadinventor/esptool) (like I do) you'd run:
 
-`esptool.py --port <USB-port-with-ESP8266> write_flash 0x00000 <arduino-builder>/bin/__TO__BE__DEFINED__LATER__.bin `
+`esptool.py --port <seria-port> write_flash 0x00000 <arduino-builder>/bin/__TO__BE__DEFINED__LATER__.bin `
 
 ## Support
 Don't leave comments on Docker Hub that are intended to be support requests. First, Docker Hub doesn't notify me when you write them, second I can't properly reply and third even if I could often it doesn't make much sense to keep them around forever and a day. Instead ask a question on [StackOverflow](http://stackoverflow.com/) and assign the `arduino` and `docker` tags.
