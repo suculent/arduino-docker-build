@@ -112,7 +112,8 @@ if [ ! -z $@ ]; then
   /opt/arduino/arduino "$@"
 else
   echo "Building from Docker for Arduino..."
-  /opt/arduino/arduino --verbose --pref build.path="$BUILD_DIR" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD --verify ./*.ino
+  BUILD_PATH=$(pwd)
+  /opt/arduino/arduino --verify --verbose --pref build.path="$BUILD_DIR" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $BUILD_PATH/*.ino
   RESULT=$?
 fi
 
