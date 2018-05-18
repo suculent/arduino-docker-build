@@ -1,7 +1,7 @@
 FROM ubuntu
 MAINTAINER suculent
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:openjdk-r/ppa && apt-get update && apt-get install -y \
   wget \
   unzip \
   git \
@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
   curl \
   xvfb \
   python python-pip python-dev build-essential \
-  libncurses-dev flex bison gperf python-serial
+  libncurses-dev flex bison gperf python-serial \
+  libxrender1 libxtst6 libxi6 openjdk-7-jdk
 
 RUN curl https://downloads.arduino.cc/arduino-1.8.5-linux64.tar.xz > ./arduino-1.8.5-linux64.tar.xz \
  && unxz ./arduino-1.8.5-linux64.tar.xz \

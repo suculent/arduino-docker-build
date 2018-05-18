@@ -46,13 +46,11 @@ cd /opt/workspace
 # Parse thinx.yml config
 
 F_CPU=80
-FLASH_SIZE="4M
+FLASH_SIZE="4M"
 
-YMLFILE=$(find / -maxdepth 4 -name 'thinx.yml' -quit | head -n 1)
-
-if [[ -f $YMLFILE ]]; then
+if [[ -f "thinx.yml" ]]; then
   echo "Reading thinx.yml:"
-  eval $(parse_yaml $YMLFILE)
+  eval $(parse_yaml thinx.yml)
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
   if [[ ! -z ${arduino_flash_ld} ]]; then
   	FLASH_LD="${arduino_board}.build.flash_ld=${arduino_flash_ld}"
@@ -83,12 +81,8 @@ RESULT=1
 
 if [ -z $DISPLAY ]; then
   echo "Simulating screen in headless mode, use socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\" "
-  Xvfb :99 &
-  export DISPLAY=:99
-  #Xvfb :1 -ac -screen 0 1280x800x24 &
-  #xvfb="$!"
-  # socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
-  # export DISPLAY=:0.0
+  Xvfb :1 -ac -screen 0 1280x800x24 &
+  xvfb="$!"
 fi
 
 echo "Current directory: $(pwd)"
@@ -113,11 +107,9 @@ fi
 # Locate nearest .ino file and enter its folder of not here
 if [[ ! -f ".ino" ]]; then
    echo "Finding sketch folder..."
-   FOLDER=$(find / -maxdepth 4 -name '*.ino' -printf '%h' -quit | head -n 1)
-   FILE=$(find / -maxdepth 4 -name '*.ino' -quit | head -n 1)
+   FOLDER=$(find . -maxdepth 2 -name '*.ino' -printf '%h')
    echo $FOLDER
-   echo $FILE
-   #pushd $FOLDER
+   pushd $FOLDER
 fi
 
 
@@ -132,14 +124,11 @@ if [ ! -z $@ ]; then
 else
   echo "Building from Docker for Arduino..."
   if [[ ! -z $FOLDER ]]; then
-    echo "Build V1"
-    /opt/arduino/arduino --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $FILE
-    # /opt/arduino/arduino --verbose-build --verify --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD "${FILE}"
+    /opt/arduino/arduino --verbose --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD --verify /opt/workspace/*.ino
   else
-    echo "Build V0"
-    ls $FOLDER
-    echo $FOLDER
-    /opt/arduino/arduino --verify --verbose-build --pref build.path="$BUILD_DIR" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $FILE
+    ls $BUILD_DIR
+    echo $BUILD_DIR
+    /opt/arduino/arduino --verbose --pref build.path="$BUILD_DIR" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD --verify /opt/workspace/*.ino
   fi
   RESULT=$?
 fi
