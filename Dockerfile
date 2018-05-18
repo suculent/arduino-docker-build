@@ -30,10 +30,11 @@ RUN mkdir /opt/workspace
 RUN mkdir -p /root/Arduino/hardware/espressif \
  && cd ~/Arduino/hardware/espressif \
  && git clone https://github.com/espressif/arduino-esp32.git esp32 \
- && cd esp32 \
+ && mv esp32 espressif32 \
+ && cd espressif32 \
  && git submodule update --init --recursive \
  && cd tools \
- && python get.py  
+ && python get.py
 
 RUN mkdir -p /root/Arduino/hardware/esp8266com \
   && cd /root/Arduino/hardware/esp8266com \
