@@ -48,40 +48,49 @@ cd /opt/workspace
 F_CPU=80
 FLASH_SIZE="4M"
 
-YMLFILE=$(find / -maxdepth 4 -name 'thinx.yml' -quit | head -n 1)
+YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
 
-if [[ -f $YMLFILE ]]; then
+if [ -z $YMLFILE ]; then
+  echo "No thinx.yml found"
+  exit 1
+fi
+
+echo "Using thinx.yml: ${YMLFILE}"
+
+if [ -f "$YMLFILE" ]; then
   echo "Reading thinx.yml:"
-  eval $(parse_yaml $YMLFILE)
+  cat $YMLFILE
+  echo
+  eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
-  if [[ ! -z ${arduino_flash_ld} ]]; then
+  if [ ! -z "${arduino_flash_ld}" ]; then
   	FLASH_LD="${arduino_board}.build.flash_ld=${arduino_flash_ld}"
   	echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
   fi
 
-  if [[ ! -z ${arduino_flash_size} ]]; then
+  if [ ! -z "${arduino_flash_size}" ]; then
     FLASH_SIZE="${arduino_flash_size}"
   fi
-  if [[ ! -z ${arduino_f_cpu} ]]; then
+  if [ ! -z "${arduino_f_cpu}" ]; then
     F_CPU="${arduino_f_cpu}"
   fi
 
-  echo "- board: $BOARD"
-  echo "- libs: ${arduino_libs[@]}"
+  echo "- board: ${BOARD}"
+  echo "- libs: ${arduino_libs}"
   echo "- flash_ld: $FLASH_LD"
   echo "- f_cpu: $F_CPU"
   echo "- flash_size: $FLASH_SIZE"
 fi
 
 BUILD_DIR=/opt/workspace/build
-if [[ -d $BUILD_DIR ]]; then
+if [ -d "$BUILD_DIR" ]; then
   rm -rf $BUILD_DIR
 fi
 mkdir $BUILD_DIR
 
 RESULT=1
 
-if [ -z $DISPLAY ]; then
+if [ -z "$DISPLAY" ]; then
   echo "Simulating screen in headless mode, use socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\" "
   Xvfb :99 &
   export DISPLAY=:99
@@ -95,23 +104,23 @@ echo "Current directory: $(pwd)"
 ls
 
 # Use default library if none set in thinx.yml
-if [[ -z ${arduino_libs} ]]; then
-	arduino_libs="THiNX"
+if [ -z "${arduino_libs}" ]; then
+    arduino_libs="THiNX"
 fi
 
 # Install managed libraries from thinx.yml
-for lib in "${arduino_libs[@]}"; do
+for lib in ${arduino_libs}; do
 	/opt/arduino/arduino --install-library $lib
 done
 
 # Install own libraries (overwriting managed libraries)
-if [[ -d "./lib" ]]; then
+if [ -d "./lib" ]; then
     echo "Copying user libraries..."
     cp -vfR ./lib/** /root/Arduino/libraries
 fi
 
 # Locate nearest .ino file and enter its folder of not here
-if [[ ! -f ".ino" ]]; then
+if [ ! -f ".ino" ]; then
    echo "Finding sketch folder..."
    FOLDER=$(find / -maxdepth 4 -name '*.ino' -printf '%h' -quit | head -n 1)
    FILE=$(find / -maxdepth 4 -name '*.ino' -quit | head -n 1)
@@ -131,7 +140,7 @@ if [ ! -z $@ ]; then
   /opt/arduino/arduino "$@"
 else
   echo "Building from Docker for Arduino..."
-  if [[ ! -z $FOLDER ]]; then
+  if [ ! -z $FOLDER ]; then
     echo "Build V1"
     /opt/arduino/arduino --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $FILE
     # /opt/arduino/arduino --verbose-build --verify --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD "${FILE}"
@@ -144,9 +153,9 @@ else
   RESULT=$?
 fi
 
-if [[ ! -z $FOLDER ]]; then
-    popd $FOLDER
-fi
+#if [ ! -z $FOLDER ]; then
+    # popd $FOLDER
+#fi
 
 #
 # Export artefacts
@@ -165,7 +174,7 @@ echo "Build artefacts in $(pwd):"
 pwd
 ls
 
-if [[ -f *.hex ]]; then
+if [ -f *.hex ]; then
   cp -vf *.hex $BUILD_DIR
 fi
 if [[ -f *.elf ]]; then
@@ -173,7 +182,7 @@ if [[ -f *.elf ]]; then
 fi
 
 # Report build status using logfile
-if [[ $RESULT == 0 ]]; then
+if [ $RESULT == 0 ]; then
   echo "THiNX BUILD SUCCESSFUL."
 else
   echo "THiNX BUILD FAILED: $?"

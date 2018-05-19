@@ -28,21 +28,19 @@ RUN curl https://downloads.arduino.cc/arduino-1.8.5-linux64.tar.xz > ./arduino-1
 
 RUN mkdir /opt/workspace
 
-RUN mkdir -p /root/Arduino/hardware/espressif \
- && cd ~/Arduino/hardware/espressif \
+RUN mkdir -p /opt/arduino/hardware/espressif \
+ && cd /opt/arduino/hardware/espressif \
  && git clone https://github.com/espressif/arduino-esp32.git esp32 \
- && mv esp32 espressif32 \
- && cd espressif32 \
+ && cd esp32 \
  && git submodule update --init --recursive \
  && cd tools \
  && python get.py
 
-RUN mkdir -p /root/Arduino/hardware/esp8266com \
-  && cd /root/Arduino/hardware/esp8266com \
+RUN cd /opt/arduino/hardware/espressif \
   && git clone https://github.com/esp8266/Arduino.git esp8266 \
   && cd esp8266/tools \
   && python get.py \
-  && echo "d1_mini.build.flash_ld=eagle.flash.4m1m.ld" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt" \
+  && echo "d1_mini.build.flash_ld=eagle.flash.4m1m.ld" >> "/opt/arduino/hardware/espressif/esp8266/boards.txt" \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt/workspace
