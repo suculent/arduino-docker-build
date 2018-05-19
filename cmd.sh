@@ -46,7 +46,7 @@ cd /opt/workspace
 # Parse thinx.yml config
 
 F_CPU=80
-FLASH_SIZE="4M
+FLASH_SIZE="4M"
 
 YMLFILE=$(find / -maxdepth 4 -name 'thinx.yml' -quit | head -n 1)
 
