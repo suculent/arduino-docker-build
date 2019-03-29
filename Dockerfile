@@ -1,7 +1,10 @@
 FROM ubuntu
 MAINTAINER suculent
 
-RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:openjdk-r/ppa && apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y -f software-properties-common \
+  && add-apt-repository ppa:openjdk-r/ppa \
+  && apt-get update \
+  && apt-get install --allow-change-held-packages -y \
   wget \
   unzip \
   git \
@@ -14,14 +17,14 @@ RUN apt-get update && apt-get install -y software-properties-common && add-apt-r
   xvfb \
   python python-pip python-dev build-essential \
   libncurses-dev flex bison gperf python-serial \
-  libxrender1 libxtst6 libxi6 openjdk-7-jdk
+  libxrender1 libxtst6 libxi6 openjdk-8-jdk
 
-RUN curl https://downloads.arduino.cc/arduino-1.8.5-linux64.tar.xz > ./arduino-1.8.5-linux64.tar.xz \
- && unxz ./arduino-1.8.5-linux64.tar.xz \
+RUN curl https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz > ./arduino-1.8.9-linux64.tar.xz \
+ && unxz ./arduino-1.8.9-linux64.tar.xz \
  && ls -la \
- && tar -xvf arduino-1.8.5-linux64.tar \
- && rm -rf arduino-1.8.5-linux64.tar \
- && mv ./arduino-1.8.5 /opt/arduino \
+ && tar -xvf arduino-1.8.9-linux64.tar \
+ && rm -rf arduino-1.8.9-linux64.tar \
+ && mv ./arduino-1.8.9 /opt/arduino \
  && cd /opt/arduino \
  && ls -la \
  && ./install.sh
