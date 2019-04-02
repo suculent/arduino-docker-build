@@ -49,18 +49,14 @@ SOURCE=.
 F_CPU=80
 FLASH_SIZE="4M"
 
-YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
+YMLFILE=$(find /opt/workspace -name "thinx.yml" -maxdepth 2 | head -n 1)
 
-if [ -z $YMLFILE ]; then
+if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
   exit 1
-fi
-
-echo "Using thinx.yml: ${YMLFILE}"
-
-if [ -f "$YMLFILE" ]; then
+else
   echo "Reading thinx.yml:"
-  cat $YMLFILE
+  cat "$YMLFILE"
   echo
   eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
@@ -192,10 +188,9 @@ fi
 
 # Cleanup mess ig any...
 rm -rf ./test
-rm -rf ./.git
 rm -rf ./.development
 rm -rf ./.pioenvs
-rm -rf ./build
+rm -rf ./build/**
 
 #
 # Export artefacts
