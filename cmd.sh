@@ -204,10 +204,16 @@ else
   echo "No lint results found..."
 fi
 
-echo "Build artefacts in $(pwd):"
-
+ls -la
 pwd
-ls
+
+echo "Build artefacts in $(BUILD_DIR):"
+
+cd $BUILD_DIR
+ls -la $BUILD_DIR
+
+echo "Sketch dir:"
+ls -la $BUILD_DIR/sketch
 
 if [ -f *.hex ]; then
   cp -vf *.hex $BUILD_DIR
