@@ -39,7 +39,9 @@ RUN mkdir -p /opt/arduino/hardware/espressif \
 
 RUN cd /opt/arduino/hardware/espressif \
   && git clone https://github.com/esp8266/Arduino.git esp8266 \
-  && cd esp8266/tools \
+  && cd esp8266 \
+  && git checkout -b master tags/2.5.0 \
+  && cd ./tools \
   && python get.py \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -48,6 +50,5 @@ RUN /opt/arduino/arduino --pref "boardsmanager.additional.urls=http://arduino.es
     && /opt/arduino/arduino --install-boards esp8266:esp8266 --save-prefs
 
 WORKDIR /opt/workspace
-EXPOSE 22
 COPY cmd.sh /opt/
 CMD /opt/cmd.sh
