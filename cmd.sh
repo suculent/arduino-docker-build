@@ -87,9 +87,11 @@ else
   echo "- source: $SOURCE"
 fi
 
-BUILD_DIR=/opt/workspace/build
-if [ -d "$BUILD_DIR" ]; then
-  rm -rf $BUILD_DIR
+BUILD_DIR="/opt/workspace/build"
+if [[ -d "$BUILD_DIR" ]]; then
+  echo "Deleting: "
+  ls $BUILD_DIR
+  rm -vrf $BUILD_DIR
 fi
 mkdir $BUILD_DIR
 
@@ -130,7 +132,7 @@ for lib in ${arduino_libs}; do
 done
 
 echo "Installed libraries:"
-ls -la /opt/arduino/libraries
+ls -l /opt/arduino/libraries
 
 # Locate nearest .ino file and enter its folder of not here
 INO=$(find . -maxdepth 2 -name '*.ino')
@@ -150,8 +152,8 @@ fi
 # exit on error
 set -e
 
-pwd
-ls
+#pwd
+#ls
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."
@@ -196,6 +198,9 @@ rm -rf ./build/**
 # Export artefacts
 #
 
+pwd
+ls -la
+
 echo "Seaching for LINT results..."
 if [ -f "../lint.txt" ]; then
   cat "../lint.txt"
@@ -204,12 +209,11 @@ else
   echo "No lint results found..."
 fi
 
-ls -la
-pwd
+BUILD_PATH="/opt/workspace/build"
+echo "Build artefacts (1) in $BUILD_PATH:"
+ls -la $BUILD_PATH
 
-echo "Build artefacts in $(BUILD_DIR):"
-
-cd $BUILD_DIR
+echo "Build artefacts (2) in $BUILD_DIR:"
 ls -la $BUILD_DIR
 
 echo "Sketch dir:"

@@ -47,8 +47,6 @@ RUN cd /opt/arduino/hardware/espressif \
 RUN /opt/arduino/arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs \
     && /opt/arduino/arduino --install-boards esp8266:esp8266 --save-prefs
 
-RUN cd /opt/arduino/hardware/espressif && ls && ls ./esp8266 && cat ./esp8266/platform.txt && cat ./esp8266/package.json
-
 WORKDIR /opt/workspace
 EXPOSE 22
 COPY cmd.sh /opt/
