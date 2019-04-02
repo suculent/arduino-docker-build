@@ -33,8 +33,8 @@ set +e # skip errors
 if [ -z "$WORKDIR" ]; then
   cd $WORKDIR
 else
-  echo "No working directory given."
-  true
+  echo "No custom working directory given, using current..."
+  WORKDIR=$(PWD)
 fi
 
 cd /opt/workspace
@@ -45,6 +45,7 @@ cd /opt/workspace
 
 # Parse thinx.yml config
 
+SOURCE=.
 F_CPU=80
 FLASH_SIZE="4M"
 
@@ -63,16 +64,23 @@ if [ -f "$YMLFILE" ]; then
   echo
   eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
+
+  # FLASH_LD this way may be already deprecated
   if [ ! -z "${arduino_flash_ld}" ]; then
-  	FLASH_LD="${arduino_board}.build.flash_ld=${arduino_flash_ld}"
-  	echo "$FLASH_LD" >> "/root/Arduino/hardware/esp8266com/esp8266/boards.txt"
+  	FLASH_LD="${arduino_board}.menu.eesz.4M.build.flash_ld=${arduino_flash_ld}"
+  	echo "$FLASH_LD" >> "/opt/arduino/hardware/espressif/esp8266/boards.txt"
   fi
 
   if [ ! -z "${arduino_flash_size}" ]; then
     FLASH_SIZE="${arduino_flash_size}"
   fi
+
   if [ ! -z "${arduino_f_cpu}" ]; then
     F_CPU="${arduino_f_cpu}"
+  fi
+
+  if [ ! -z "${arduino_source}" ]; then
+    SOURCE="${arduino_source}"
   fi
 
   echo "- board: ${BOARD}"
@@ -80,6 +88,7 @@ if [ -f "$YMLFILE" ]; then
   echo "- flash_ld: $FLASH_LD"
   echo "- f_cpu: $F_CPU"
   echo "- flash_size: $FLASH_SIZE"
+  echo "- source: $SOURCE"
 fi
 
 BUILD_DIR=/opt/workspace/build
@@ -100,8 +109,18 @@ if [ -z "$DISPLAY" ]; then
   # export DISPLAY=:0.0
 fi
 
-echo "Current directory: $(pwd)"
-ls
+cd $SOURCE
+
+# Install own libraries (overwriting managed libraries)
+if [ -d "./lib" ]; then
+    echo "Copying user libraries..."
+    cp -vfR ./lib/** /opt/arduino/libraries
+fi
+
+if [ -d "../lib" ]; then
+    echo "Copying user libraries from folder level above..."
+    cp -vfR ../lib/** /opt/arduino/libraries
+fi
 
 # Use default library if none set in thinx.yml
 if [ -z "${arduino_libs}" ]; then
@@ -110,22 +129,24 @@ fi
 
 # Install managed libraries from thinx.yml
 for lib in ${arduino_libs}; do
+  echo "Installing library $lib..."
 	/opt/arduino/arduino --install-library $lib
 done
 
-# Install own libraries (overwriting managed libraries)
-if [ -d "./lib" ]; then
-    echo "Copying user libraries..."
-    cp -vfR ./lib/** /root/Arduino/libraries
-fi
+echo "Installed libraries:"
+ls /opt/arduino/libraries
 
 # Locate nearest .ino file and enter its folder of not here
-if [ ! -f ".ino" ]; then
-   echo "Finding sketch folder..."
-   FOLDER=$(find / -maxdepth 4 -name '*.ino' -printf '%h' -quit | head -n 1)
-   FILE=$(find / -maxdepth 4 -name '*.ino' -quit | head -n 1)
-   echo $FOLDER
-   echo $FILE
+INO=$(find . -maxdepth 2 -name '*.ino')
+if [ ! -f $INO ]; then
+   echo "Finding sketch folder in " $(pwd)
+   FOLDER=$(find . -maxdepth 4 -name '*.ino' -printf '%h' -quit | head -n 1)
+   echo "Folder: " $FOLDER
+   FILE=$(find $FOLDER -maxdepth 4 -name '*.ino' -quit | head -n 1)
+   echo "Finding sketch file:"
+   echo "File: " $FILE
+   INO=$FOLDER/$FILE
+   echo "INO:" $INO
    #pushd $FOLDER
 fi
 
@@ -133,6 +154,7 @@ fi
 # exit on error
 set -e
 
+pwd
 ls
 
 if [ ! -z $@ ]; then
@@ -141,14 +163,25 @@ if [ ! -z $@ ]; then
 else
   echo "Building from Docker for Arduino..."
   if [ ! -z $FOLDER ]; then
-    echo "Build V1"
-    /opt/arduino/arduino --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $FILE
+    echo "Build V1 (no folder)"
+
+    echo "INO: ${INO}"
+
+    /opt/arduino/arduino --verbose-build --verify \
+    --pref build.path="/opt/workspace/build" \
+    --pref build.f_cpu=$F_CPU \
+    --pref build.flash_size=$FLASH_SIZE \
+    --board $BOARD \
+    $INO
+
+    # /opt/arduino/arduino --verbose-build --verify --pref build.path="/opt/workspace/build" --pref build.f_cpu=80 --pref build.flash_size=4M --board d1_mini_pro "./src/src.ino"
     # /opt/arduino/arduino --verbose-build --verify --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD "${FILE}"
   else
-    echo "Build V0"
-    ls $FOLDER
-    echo $FOLDER
-    /opt/arduino/arduino --verify --verbose-build --pref build.path="$BUILD_DIR" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $FILE
+    echo "Build V0 (with $INO) in $pwd"
+    echo "Board: $BOARD"
+    CMD="/opt/arduino/arduino --verbose-build --verify --pref build.path=$BUILD_DIR --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $INO"
+    echo "CMD: ${CMD}"
+    $(${CMD})
   fi
   RESULT=$?
 fi
@@ -156,6 +189,13 @@ fi
 #if [ ! -z $FOLDER ]; then
     # popd $FOLDER
 #fi
+
+# Cleanup mess ig any...
+rm -rf ./test
+rm -rf ./.git
+rm -rf ./.development
+rm -rf ./.pioenvs
+rm -rf ./build
 
 #
 # Export artefacts

@@ -43,8 +43,13 @@ RUN cd /opt/arduino/hardware/espressif \
   && git clone https://github.com/esp8266/Arduino.git esp8266 \
   && cd esp8266/tools \
   && python get.py \
-  && echo "d1_mini.build.flash_ld=eagle.flash.4m1m.ld" >> "/opt/arduino/hardware/espressif/esp8266/boards.txt" \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Add boards manager URL (warning, mismatch in boardsmanager vs. boards_manager in 2.6.0 coming up)
+RUN /opt/arduino/arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs \
+    && /opt/arduino/arduino --install-boards esp8266:esp8266 --save-prefs
+
+RUN cd /opt/arduino/hardware/espressif && ls && ls ./esp8266 && cat ./esp8266/platform.txt && cat ./esp8266/package.json
 
 WORKDIR /opt/workspace
 EXPOSE 22

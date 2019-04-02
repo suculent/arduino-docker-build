@@ -28,12 +28,18 @@ Follow the instructions at [https://docs.docker.com/get-started/](https://docs.d
 
 1. Install and run `socat` to tunnel the X11
 
-  ``brew install socat``
-  socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
+```
+	$ brew install socat
+  	$ socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
+```
 
 2. Insert your IP address here to display Arduino IDE using X11/socat
 
-  ``docker run --rm -ti -e DISPLAY=192.168.1.10:0 -v `pwd`:/opt/workspace suculent/arduino-docker-build```
+```
+	docker run --rm -ti -e DISPLAY=192.168.1.10:0 -v `pwd`:/opt/workspace suculent/arduino-docker-build
+	
+	docker run --rm -ti -e DISPLAY=127.0.0.1:0 -v `pwd`:/opt/workspace suculent/arduino-docker-build
+	```
 
 3. Start terminal and change to the your Arduino project repository (that contains mandatory directory containing your .ino file). Then run:
 
