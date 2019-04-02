@@ -130,7 +130,7 @@ for lib in ${arduino_libs}; do
 done
 
 echo "Installed libraries:"
-ls /opt/arduino/libraries
+ls -la /opt/arduino/libraries
 
 # Locate nearest .ino file and enter its folder of not here
 INO=$(find . -maxdepth 2 -name '*.ino')
