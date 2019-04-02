@@ -40,7 +40,7 @@ RUN mkdir -p /opt/arduino/hardware/espressif \
 RUN cd /opt/arduino/hardware/espressif \
   && git clone https://github.com/esp8266/Arduino.git esp8266 \
   && cd esp8266 \
-  && git checkout -b master tags/2.5.0 \
+  && git checkout tags/2.5.0 \
   && cd ./tools \
   && python get.py \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

@@ -61,12 +61,6 @@ else
   eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
 
-  # FLASH_LD this way may be already deprecated
-  if [ ! -z "${arduino_flash_ld}" ]; then
-  	FLASH_LD="${arduino_board}.menu.eesz.4M.build.flash_ld=${arduino_flash_ld}"
-  	echo "$FLASH_LD" >> "/opt/arduino/hardware/espressif/esp8266/boards.txt"
-  fi
-
   if [ ! -z "${arduino_flash_size}" ]; then
     FLASH_SIZE="${arduino_flash_size}"
   fi
@@ -81,11 +75,14 @@ else
 
   echo "- board: ${BOARD}"
   echo "- libs: ${arduino_libs}"
-  echo "- flash_ld: $FLASH_LD"
+  echo "- flash_ld: ${arduino_flash_ld}"
   echo "- f_cpu: $F_CPU"
   echo "- flash_size: $FLASH_SIZE"
   echo "- source: $SOURCE"
 fi
+
+# TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
+rm -rf /opt/arduino/libraries/WiFi
 
 BUILD_DIR="/opt/workspace/build"
 if [[ -d "$BUILD_DIR" ]]; then
@@ -165,19 +162,27 @@ else
 
     echo "INO: ${INO}"
 
-    /opt/arduino/arduino --verbose-build --verify \
+    /opt/arduino/arduino --verbose-build \
     --pref build.path="/opt/workspace/build" \
     --pref build.f_cpu=$F_CPU \
+    --pref build.flash_ld=${arduino_flash_ld} \
     --pref build.flash_size=$FLASH_SIZE \
     --board $BOARD \
     $INO
 
-    # /opt/arduino/arduino --verbose-build --verify --pref build.path="/opt/workspace/build" --pref build.f_cpu=80 --pref build.flash_size=4M --board d1_mini_pro "./src/src.ino"
-    # /opt/arduino/arduino --verbose-build --verify --pref build.path="/opt/workspace/build" --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD "${FILE}"
   else
     echo "Build V0 (with $INO) in $pwd"
     echo "Board: $BOARD"
-    CMD="/opt/arduino/arduino --verbose-build --verify --pref build.path=$BUILD_DIR --pref build.f_cpu=$F_CPU --pref build.flash_size=$FLASH_SIZE --board $BOARD $INO"
+    #FQBN='-fqbn=esp8266com:esp8266:${arduino_board}:' \
+    #        'xtal=${F_CPU},' \
+    #        'FlashFreq={flash_freq},' \
+    #        'FlashMode={flash_mode},' \
+    #        'baud=921600,' \
+    #        'eesz={FLASH_SIZE},' \
+    #        'ip={lwIP},' \
+    #        'ResetMethod=nodemcu'
+    #echo $FQBN
+    CMD="/opt/arduino/arduino --verify --verbose-build --pref build.flash_ld=$arduino_flash_ld --pref build.path=$BUILD_DIR --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --board $BOARD $INO"
     echo "CMD: ${CMD}"
     $(${CMD})
   fi
@@ -203,6 +208,7 @@ ls -la
 
 echo "Seaching for LINT results..."
 if [ -f "../lint.txt" ]; then
+  echo "Lint output:"
   cat "../lint.txt"
   cp -vf "../lint.txt" $BUILD_DIR/lint.txt
 else
@@ -213,18 +219,21 @@ BUILD_PATH="/opt/workspace/build"
 echo "Build artefacts (1) in $BUILD_PATH:"
 ls -la $BUILD_PATH
 
-echo "Build artefacts (2) in $BUILD_DIR:"
-ls -la $BUILD_DIR
-
-echo "Sketch dir:"
+echo "Build artefacts (2) in $BUILD_DIR/sketch:"
 ls -la $BUILD_DIR/sketch
 
-if [ -f *.hex ]; then
-  cp -vf *.hex $BUILD_DIR
+#echo "Sketch dir:"
+#ls -la $BUILD_DIR/sketch
+
+if [ -f $BUILD_PATH/*.hex ]; then
+  cp -vf $BUILD_PATH/*.hex $BUILD_DIR/firmware.hex
 fi
-if [[ -f *.elf ]]; then
-  cp -vf *.elf $BUILD_DIR
+if [[ -f $BUILD_PATH/*.elf ]]; then
+  cp -vf $BUILD_PATH/*.elf $BUILD_DIR/firmware.elf
 fi
+
+echo "Build dir in $BUILD_DIR:"
+ls -la $BUILD_DIR
 
 # Report build status using logfile
 if [ $RESULT == 0 ]; then
