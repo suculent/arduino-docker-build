@@ -21,12 +21,10 @@ RUN apt-get update && apt-get install -y -f software-properties-common \
 
 RUN curl https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz > ./arduino-1.8.9-linux64.tar.xz \
  && unxz ./arduino-1.8.9-linux64.tar.xz \
- && ls -la \
  && tar -xvf arduino-1.8.9-linux64.tar \
  && rm -rf arduino-1.8.9-linux64.tar \
  && mv ./arduino-1.8.9 /opt/arduino \
  && cd /opt/arduino \
- && ls -la \
  && ./install.sh
 
 RUN mkdir /opt/workspace
