@@ -217,23 +217,20 @@ fi
 
 BUILD_PATH="/opt/workspace/build"
 echo "Build artefacts (1) in $BUILD_PATH:"
-ls -la $BUILD_PATH
 
-echo "Build artefacts (2) in $BUILD_DIR/sketch:"
-ls -la $BUILD_DIR/sketch
+cd $BUILD_PATH
+ls -la
 
-#echo "Sketch dir:"
-#ls -la $BUILD_DIR/sketch
+#if [ -f $BUILD_PATH/*.bin ]; then
+  mv *.bin firmware.bin
+#fi
 
-if [ -f $BUILD_PATH/*.hex ]; then
-  cp -vf $BUILD_PATH/*.hex $BUILD_DIR/firmware.hex
-fi
-if [[ -f $BUILD_PATH/*.elf ]]; then
-  cp -vf $BUILD_PATH/*.elf $BUILD_DIR/firmware.elf
-fi
+#if [[ -f $BUILD_PATH/*.elf ]]; then
+  mv *.elf firmware.elf
+#fi
 
-echo "Build dir in $BUILD_DIR:"
-ls -la $BUILD_DIR
+echo "Build artefacts (1) in $BUILD_PATH:"
+ls -la
 
 # Report build status using logfile
 if [ $RESULT == 0 ]; then
