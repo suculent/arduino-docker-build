@@ -108,13 +108,13 @@ cd $SOURCE
 
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
-    echo "Copying user libraries..."
-    cp -vfR ./lib/** /opt/arduino/libraries
+    echo "Copying user libraries (1)..."
+    cp -fR ./lib/** /opt/arduino/libraries
 fi
 
 if [ -d "../lib" ]; then
-    echo "Copying user libraries from folder level above..."
-    cp -vfR ../lib/** /opt/arduino/libraries
+    echo "Copying user libraries (2)..."
+    cp -fR ../lib/** /opt/arduino/libraries
 fi
 
 # Use default library if none set in thinx.yml
