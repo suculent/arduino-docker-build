@@ -49,7 +49,7 @@ SOURCE=.
 F_CPU=80
 FLASH_SIZE="4M"
 
-YMLFILE=$(find /opt/workspace -name "thinx.yml" -maxdepth 2 | head -n 1)
+YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
 
 if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
@@ -203,9 +203,6 @@ rm -rf ./build/**
 # Export artefacts
 #
 
-pwd
-ls -la
-
 echo "Seaching for LINT results..."
 if [ -f "../lint.txt" ]; then
   echo "Lint output:"
@@ -219,18 +216,14 @@ BUILD_PATH="/opt/workspace/build"
 echo "Build artefacts (1) in $BUILD_PATH:"
 
 cd $BUILD_PATH
-ls -la
 
-#if [ -f $BUILD_PATH/*.bin ]; then
+if [ -f *.bin ]; then
   mv *.bin firmware.bin
-#fi
+fi
 
-#if [[ -f $BUILD_PATH/*.elf ]]; then
+if [[ -f *.elf ]]; then
   mv *.elf firmware.elf
-#fi
-
-echo "Build artefacts (1) in $BUILD_PATH:"
-ls -la
+fi
 
 # Report build status using logfile
 if [ $RESULT == 0 ]; then
