@@ -22,6 +22,14 @@ Run the [Arduino](http://arduino.cc) command-line builder in a docker container.
 ### Install Docker
 Follow the instructions at [https://docs.docker.com/get-started/](https://docs.docker.com/get-started/).
 
+### Quick Start
+
+Enter any Arduino project repository root. Builder expects thinx.yml file. To build the project, just run:
+
+```
+  docker run --rm -t -v `pwd`:/opt/workspace suculent/arduino-docker-build
+```
+
 ### Run this image with Docker
 
 **Preparation**
@@ -36,10 +44,8 @@ Follow the instructions at [https://docs.docker.com/get-started/](https://docs.d
 2. Insert your IP address here to display Arduino IDE using X11/socat
 
 ```
-	docker run --rm -ti -e DISPLAY=192.168.1.10:0 -v `pwd`:/opt/workspace suculent/arduino-docker-build
-	
 	docker run --rm -ti -e DISPLAY=127.0.0.1:0 -v `pwd`:/opt/workspace suculent/arduino-docker-build
-	```
+```
 
 3. Start terminal and change to the your Arduino project repository (that contains mandatory directory containing your .ino file). Then run:
 
@@ -63,7 +69,7 @@ If the Windows path contains spaces it would have to be wrapped in quotes as usu
 
 #### User libraries
 
-In case there is a `lib` folder next to your `.ino` file, it will be copied to `../Arduino/libraries` folder from your repository.
+In case there is a `lib` folder next to your `.ino` file, it will be copied to the build path from your repository.
 
 #### Output
 The firmware file is created in the `bin` sub folder of your root directory. You will also find a mapfile in the `bin` folder with the same name as the firmware file but with a `.map` ending.
@@ -76,7 +82,7 @@ You can pass the following optional parameters to the Docker build like so `dock
 ### Flashing the built binary
 There are several [tools to flash the firmware](http://nodemcu.readthedocs.org/en/dev/en/flash/) to the ESP8266/ESP32. If you were to use [esptool](https://github.com/themadinventor/esptool) (like I do) you'd run:
 
-`esptool.py --port <seria-port> write_flash 0x00000 <arduino-builder>/bin/__TO__BE__DEFINED__LATER__.bin `
+`esptool.py --port <seria-port> write_flash 0x00000 firmware.bin`
 
 ## Support
 Don't leave comments on Docker Hub that are intended to be support requests. First, Docker Hub doesn't notify me when you write them, second I can't properly reply and third even if I could often it doesn't make much sense to keep them around forever and a day. Instead ask a question on [StackOverflow](http://stackoverflow.com/) and assign the `arduino` and `docker` tags.
