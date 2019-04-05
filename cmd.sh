@@ -129,7 +129,7 @@ for lib in ${arduino_libs}; do
 done
 
 echo "Installed libraries:"
-ls -l /opt/arduino/libraries
+ls /opt/arduino/libraries
 
 # Locate nearest .ino file and enter its folder of not here
 INO=$(find . -maxdepth 2 -name '*.ino')
@@ -149,8 +149,11 @@ fi
 # exit on error
 set -e
 
-#pwd
-#ls
+# Cleanup mess if any...
+rm -rf ./test
+rm -rf ./.development
+rm -rf ./.pioenvs
+rm -rf ./build/**
 
 if [ ! -z $@ ]; then
   echo "Running from Docker for Arduino with arguments..."
@@ -171,24 +174,14 @@ else
     $INO
 
   else
-    echo "Build V0 (with $INO) in $pwd"
-    echo "Board: $BOARD"
+    echo "Building sketch $INO) in $(pwd)"
+    echo "Build for board: $BOARD"
     CMD="/opt/arduino/arduino --verify --verbose-build --pref build.flash_ld=$arduino_flash_ld --pref build.path=$BUILD_DIR --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --board $BOARD $INO"
-    echo "CMD: ${CMD}"
+    echo "Build command: ${CMD}"
     $(${CMD})
   fi
   RESULT=$?
 fi
-
-#if [ ! -z $FOLDER ]; then
-    # popd $FOLDER
-#fi
-
-# Cleanup mess ig any...
-rm -rf ./test
-rm -rf ./.development
-rm -rf ./.pioenvs
-rm -rf ./build/**
 
 #
 # Export artefacts
