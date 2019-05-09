@@ -189,8 +189,8 @@ echo "Build artefacts in $BUILD_PATH:"
 ls
 
 # TODO: find one would be safer
-BIN_FILE=$(find . -name '*.bin')
-ELF_FILE=$(find . -name '*.elf')
+BIN_FILE=$(find . -name '*.bin' | head -n 1)
+ELF_FILE=$(find . -name '*.elf' | head -n 1)
 
 if [[ ! -z $BIN_FILE ]]; then
   mv -v $BIN_FILE firmware.bin
