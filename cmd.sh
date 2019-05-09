@@ -75,7 +75,8 @@ else
 
   echo "- board: ${BOARD}"
   echo "- libs: ${arduino_libs}"
-  echo "- flash_ld: ${arduino_flash_ld}"
+  echo "- flash_ld: ${arduino_flash_ld} (esp8266)"
+  echo "- partitions: ${PARTITIONS} (esp32)"
   echo "- f_cpu: $F_CPU"
   echo "- flash_size: $FLASH_SIZE"
   echo "- source: $SOURCE"
@@ -124,7 +125,7 @@ for lib in ${arduino_libs}; do
 done
 
 echo "Installed libraries:"
-ls "/opt/arduino/libraries"
+ls -la "/opt/arduino/libraries"
 
 # Locate nearest .ino file and enter its folder of not here
 echo "Searching INO file in:"
@@ -147,19 +148,21 @@ echo "==================== BUILDER STARTED ========================"
 # exit on error
 set +e
 
-echo "In workspace: ${pwd}"
-
-ls
-
 if [[ ! -z $@ ]]; then
   echo "Running builder..."
   /opt/arduino/arduino "$@"
 else
   ls
   echo "Running builder..."
-  echo "Sketch: $INO_FILE in: $(pwd)"  
+  echo "Sketch: $INO_FILE in: $(pwd)"
   echo "Target board: $BOARD"
-  CMD="/opt/arduino/arduino --verify --verbose-build --pref build.flash_ld=$arduino_flash_ld --pref build.path=/opt/workspace/build --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --pref build.flash_ld=${arduino_flash_ld} --board $BOARD $INO_FILE"
+  if [[ ${arduino_arch} == "esp32" ]]; then
+    FLASH_INSERT="--pref build.partitions=$arduino_partitions"
+  fi
+  if [[ ${arduino_arch} == "esp8266" ]]; then
+    FLASH_INSERT="--pref build.flash_ld=$arduino_flash_ld"
+  fi
+  CMD="/opt/arduino/arduino --verify --verbose-build $FLASH_INSERT --pref build.path=/opt/workspace/build --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --pref build.flash_ld=${arduino_flash_ld} --board $BOARD $INO_FILE"
   echo "Build command: ${CMD}"
   $(${CMD})
 fi
@@ -183,7 +186,6 @@ BUILD_PATH="/opt/workspace/build"
 cd $BUILD_PATH
 
 echo "Build artefacts in $BUILD_PATH:"
-pwd
 ls
 
 # TODO: find one would be safer
@@ -197,7 +199,7 @@ fi
 
 if [[ ! -z $ELF_FILE ]]; then
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
-  mv -v $ELF_FILE firmware.elf  
+  mv -v $ELF_FILE firmware.elf
 fi
 
 if [[ -f "./build.options.json" ]]; then
