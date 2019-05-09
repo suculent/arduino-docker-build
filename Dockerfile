@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y -f software-properties-common \
   xvfb \
   python python-pip python-dev build-essential \
   libncurses-dev flex bison gperf python-serial \
-  libxrender1 libxtst6 libxi6 openjdk-8-jdk
+  libxrender1 libxtst6 libxi6 openjdk-8-jdk \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN curl https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz > ./arduino-1.8.9-linux64.tar.xz \
  && unxz ./arduino-1.8.9-linux64.tar.xz \
