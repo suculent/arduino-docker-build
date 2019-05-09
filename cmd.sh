@@ -106,13 +106,8 @@ fi
 
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
-    echo "Copying user libraries (1)..."
+    echo "Copying user libraries..."
     cp -fR ./lib/** /opt/arduino/libraries
-fi
-
-if [ -d "../lib" ]; then
-    echo "Copying user libraries (2)..."
-    cp -fR ../lib/** /opt/arduino/libraries
 fi
 
 # Use default library if none set in thinx.yml
@@ -139,8 +134,6 @@ if [[ -z $INO_FILE ]]; then
   echo "No INO found in " $(pwd)
   ls
   exit 1
-else
-  INO=$(pwd)/$INO_FILE
 fi
 
 
