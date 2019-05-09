@@ -147,18 +147,18 @@ echo "==================== BUILDER STARTED ========================"
 # exit on error
 set +e
 
-echo "Building in workspace ${pwd}"
+echo "In workspace: ${pwd}"
 
 ls
 
 if [[ ! -z $@ ]]; then
-  echo "Running from Docker for Arduino with arguments..."
+  echo "Running builder..."
   /opt/arduino/arduino "$@"
 else
   ls
-  echo "Building from Docker for Arduino..."
-  echo "Sketch ($INO_FILE) in $(pwd)"  
-  echo "Build for board: $BOARD"
+  echo "Running builder..."
+  echo "Sketch: $INO_FILE in: $(pwd)"  
+  echo "Target board: $BOARD"
   CMD="/opt/arduino/arduino --verify --verbose-build --pref build.flash_ld=$arduino_flash_ld --pref build.path=/opt/workspace/build --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --pref build.flash_ld=${arduino_flash_ld} --board $BOARD $INO_FILE"
   echo "Build command: ${CMD}"
   $(${CMD})
@@ -170,7 +170,7 @@ echo "==================== BUILDER COMPLETED ========================"
 # Export artefacts
 #
 
-echo "Seaching for LINT results..."
+echo "Seaching for Lint results..."
 if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
