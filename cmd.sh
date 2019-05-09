@@ -25,7 +25,7 @@ parse_yaml() {
     }' | sed 's/_=/+=/g'
 }
 
-set +e # skip errors
+set +e # don't skip errors ("Selected library is not available" on install)
 
 # Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
 # - KEY=<value>
@@ -104,8 +104,6 @@ if [ -z "$DISPLAY" ]; then
   # export DISPLAY=:0.0
 fi
 
-cd $SOURCE
-
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
     echo "Copying user libraries (1)..."
@@ -125,29 +123,26 @@ fi
 # Install managed libraries from thinx.yml
 for lib in ${arduino_libs}; do
   echo "Installing library $lib..."
+  set +e
 	/opt/arduino/arduino --install-library $lib
+  set -e
 done
 
 echo "Installed libraries:"
-ls /opt/arduino/libraries
+ls "/opt/arduino/libraries"
 
 # Locate nearest .ino file and enter its folder of not here
-INO=$(find . -maxdepth 2 -name '*.ino')
-if [ ! -f $INO ]; then
-   echo "Finding sketch folder in " $(pwd)
-   FOLDER=$(find . -maxdepth 4 -name '*.ino' -printf '%h' -quit | head -n 1)
-   echo "Folder: " $FOLDER
-   FILE=$(find $FOLDER -maxdepth 4 -name '*.ino' -quit | head -n 1)
-   echo "Finding sketch file:"
-   echo "File: " $FILE
-   INO=$FOLDER/$FILE
-   echo "INO:" $INO
-   #pushd $FOLDER
+echo "Searching INO file in:"
+INO_FILE=$(find ./${SOURCE} -name '*.ino') # todo: search only one
+echo "INO Search Result: $INO_FILE"
+if [[ -z $INO_FILE ]]; then
+  echo "No INO found in " $(pwd)
+  ls
+  exit 1
+else
+  INO=$(pwd)/$INO_FILE
 fi
 
-
-# exit on error
-set -e
 
 # Cleanup mess if any...
 rm -rf ./test
@@ -155,40 +150,34 @@ rm -rf ./.development
 rm -rf ./.pioenvs
 rm -rf ./build/**
 
-if [ ! -z $@ ]; then
+echo "==================== BUILDER STARTED ========================"
+
+# exit on error
+set +e
+
+echo "Building in workspace ${pwd}"
+
+if [[ ! -z $@ ]]; then
   echo "Running from Docker for Arduino with arguments..."
   /opt/arduino/arduino "$@"
 else
+  ls
   echo "Building from Docker for Arduino..."
-  if [ ! -z $FOLDER ]; then
-    echo "Build V1 (no folder)"
-
-    echo "INO: ${INO}"
-
-    /opt/arduino/arduino --verbose-build \
-    --pref build.path="/opt/workspace/build" \
-    --pref build.f_cpu=$F_CPU \
-    --pref build.flash_ld=${arduino_flash_ld} \
-    --pref build.flash_size=$FLASH_SIZE \
-    --board $BOARD \
-    $INO
-
-  else
-    echo "Building sketch $INO) in $(pwd)"
-    echo "Build for board: $BOARD"
-    CMD="/opt/arduino/arduino --verify --verbose-build --pref build.flash_ld=$arduino_flash_ld --pref build.path=$BUILD_DIR --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --board $BOARD $INO"
-    echo "Build command: ${CMD}"
-    $(${CMD})
-  fi
-  RESULT=$?
+  echo "Sketch ($INO) in $(pwd)"  
+  echo "Build for board: $BOARD"
+  CMD="/opt/arduino/arduino --verbose-build --pref build.flash_ld=$arduino_flash_ld --pref build.path=/opt/workspace/build --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --pref build.flash_ld=${arduino_flash_ld} --board $BOARD $INO"
+  echo "Build command: ${CMD}"
+  $(${CMD})
 fi
+
+echo "==================== BUILDER COMPLETED ========================"
 
 #
 # Export artefacts
 #
 
 echo "Seaching for LINT results..."
-if [ -f "../lint.txt" ]; then
+if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
   cp -vf "../lint.txt" $BUILD_DIR/lint.txt
@@ -197,21 +186,34 @@ else
 fi
 
 BUILD_PATH="/opt/workspace/build"
-echo "Build artefacts (1) in $BUILD_PATH:"
-
 cd $BUILD_PATH
 
-if [ -f *.bin ]; then
-  mv *.bin firmware.bin
+echo "Build artefacts in $BUILD_PATH:"
+pwd
+ls
+
+# TODO: find one would be safer
+BIN_FILE=$(find . -name '*.bin')
+ELF_FILE=$(find . -name '*.elf')
+
+if [[ ! -z $BIN_FILE ]]; then
+  mv -v $BIN_FILE firmware.bin
+  RESULT=0
 fi
 
-if [[ -f *.elf ]]; then
-  mv *.elf firmware.elf
+if [[ ! -z $ELF_FILE ]]; then
+  chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
+  mv -v $ELF_FILE firmware.elf  
+fi
+
+if [[ -f "./build.options.json" ]]; then
+  cat ./build.options.json
+  echo ""
 fi
 
 # Report build status using logfile
-if [ $RESULT == 0 ]; then
+if [[ $RESULT == 0 ]]; then
   echo "THiNX BUILD SUCCESSFUL."
 else
-  echo "THiNX BUILD FAILED: $?"
+  echo "THiNX BUILD FAILED: $RESULT"
 fi
