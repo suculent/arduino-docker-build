@@ -35,6 +35,7 @@ RUN mkdir -p /opt/arduino/hardware/espressif \
  && git clone https://github.com/espressif/arduino-esp32.git esp32 \
  && cd esp32 \
  && git submodule update --init --recursive \
+ && rm -rf **/examples/** \
  && cd tools \
  && python get.py
 
@@ -42,6 +43,7 @@ RUN cd /opt/arduino/hardware/espressif \
   && git clone https://github.com/esp8266/Arduino.git esp8266 \
   && cd esp8266 \
   && git checkout tags/2.5.0 \
+  && rm -rf **/examples/** \
   && cd ./tools \
   && python get.py \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
