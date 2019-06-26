@@ -45,7 +45,7 @@ cd /opt/workspace
 
 # Parse thinx.yml config
 
-SOURCE=.
+SOURCE=$(pwd)
 F_CPU=80
 FLASH_SIZE="4M"
 
@@ -127,11 +127,15 @@ done
 echo "Installed libraries:"
 ls -la "/opt/arduino/libraries"
 
+# before searching INOs, clear mess...
+rm -rf ${SOURCE}/.development
+rm -rf ${SOURCE}/lib/**/examples/**
+
 # Locate nearest .ino file and enter its folder of not here
-echo "Searching INO file in:"
-INO_FILE=$(find ./${SOURCE} -name '*.ino') # todo: search only one
+echo "Searching INO file in: ${SOURCE} from $(pwd)"
+INO_FILE=$(find ${SOURCE} -name '*.ino') # todo: search only one
 echo "INO Search Result: $INO_FILE"
-if [[ -z $INO_FILE ]]; then
+if [[ ! -f $INO_FILE ]]; then
   echo "No INO found in " $(pwd)
   ls
   exit 1
