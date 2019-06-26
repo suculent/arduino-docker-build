@@ -133,19 +133,18 @@ rm -rf ${SOURCE}/lib/**/examples/**
 
 # Locate nearest .ino file and enter its folder of not here
 echo "Searching INO file in: ${SOURCE} from $(pwd)"
-INO_FILE=$(find ${SOURCE} -name '*.ino') # todo: search only one
+INO_FILE=$(find ${SOURCE} -name '*.ino' -maxdepth 3) # todo: search only one
 echo "INO Search Result: $INO_FILE"
 if [[ ! -f $INO_FILE ]]; then
-  echo "No INO found in " $(pwd)
-  ls
+  echo "None or too many INOs found in " $(pwd)
   exit 1
 fi
 
 # Cleanup mess if any...
-rm -rf ./test
-rm -rf ./.development
-rm -rf ./.pioenvs
-rm -rf ./build/**
+rm -rf ${SOURCE}/test
+rm -rf ${SOURCE}/.development
+rm -rf ${SOURCE}/.pioenvs
+rm -rf ${SOURCE}/build/**
 
 echo "==================== BUILDER STARTED ========================"
 
