@@ -3,7 +3,7 @@ FROM ubuntu:16.04
 RUN apt-get update && apt-get install -y --no-install-recommends -f software-properties-common \
   && add-apt-repository ppa:openjdk-r/ppa \
   && apt-get update \
-  && apt-get install --allow-change-held-packages -y \
+  && apt-get install --no-install-recommends --allow-change-held-packages -y \
   wget \
   unzip \
   git \
@@ -29,12 +29,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends -f software-pro
   openjdk-8-jdk \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+WORKDIR /opt
+
 RUN curl https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz > ./arduino-1.8.9-linux64.tar.xz \
  && unxz ./arduino-1.8.9-linux64.tar.xz \
  && tar -xvf arduino-1.8.9-linux64.tar \
  && rm -rf arduino-1.8.9-linux64.tar \
- && mv ./arduino-1.8.9 /opt/arduino \
- && cd /opt/arduino \
+ && mv ./arduino-1.8.9 ./arduino \
+ && cd ./arduino \
  && ./install.sh
 
 WORKDIR /opt/arduino/hardware/espressif
@@ -43,17 +45,20 @@ RUN git clone https://github.com/espressif/arduino-esp32.git esp32
 
 WORKDIR /opt/arduino/hardware/espressif/esp32
 RUN git submodule update --init --recursive \
- && rm -rf ./**/examples/** \
- && cd tools \
- && python get.py
+ && rm -rf ./**/examples/**
+
+WORKDIR /opt/arduino/hardware/espressif/esp32/tools
+RUN python get.py
 
 RUN git clone https://github.com/esp8266/Arduino.git esp8266
 WORKDIR /opt/arduino/hardware/espressif/esp8266
 RUN git checkout tags/2.5.0 \
-  && rm -rf ./**/examples/** \
-  && cd ./tools \
-  && python get.py \
-  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  && rm -rf ./**/examples/**
+
+WORKDIR /opt/arduino/hardware/espressif/esp8266/tools
+RUN python get.py
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Add boards manager URL (warning, mismatch in boardsmanager vs. boards_manager in 2.6.0 coming up)
 RUN /opt/arduino/arduino \
