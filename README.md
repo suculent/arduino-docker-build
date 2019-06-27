@@ -1,5 +1,6 @@
 # Arduino Docker Build
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dfce8ce3e28b4cc788197cf7f360c89f)](https://app.codacy.com/app/suculent/arduino-docker-build?utm_source=github.com&utm_medium=referral&utm_content=suculent/arduino-docker-build&utm_campaign=Badge_Grade_Settings)
 [![Docker Pulls](https://img.shields.io/docker/pulls/suculent/arduino-docker-build.svg)](https://hub.docker.com/r/suculent/arduino-docker-build/) [![Docker Stars](https://img.shields.io/docker/stars/suculent/arduino-docker-build.svg)](https://hub.docker.com/r/suculent/arduino-docker-build/) [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/suculent/arduino-docker-build/blob/master/LICENSE)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=alert_status)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
