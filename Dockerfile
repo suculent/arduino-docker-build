@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends -f software-pro
   libxrender1 \
   libxtst6 \
   libxi6 \
-  openjdk-8-jdk \
+  openjdk-8-jre \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt
@@ -50,9 +50,10 @@ RUN git submodule update --init --recursive \
 WORKDIR /opt/arduino/hardware/espressif/esp32/tools
 RUN python get.py
 
+WORKDIR /opt/arduino/hardware/espressif
 RUN git clone https://github.com/esp8266/Arduino.git esp8266
 WORKDIR /opt/arduino/hardware/espressif/esp8266
-RUN git checkout tags/2.5.0 \
+RUN git checkout tags/2.5.2 \
   && rm -rf ./**/examples/**
 
 WORKDIR /opt/arduino/hardware/espressif/esp8266/tools
