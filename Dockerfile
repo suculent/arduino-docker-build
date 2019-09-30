@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y --no-install-recommends -f software-properties-common \
+RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f software-properties-common \
   && add-apt-repository ppa:openjdk-r/ppa \
   && apt-get update \
   && apt-get install --no-install-recommends --allow-change-held-packages -y \
