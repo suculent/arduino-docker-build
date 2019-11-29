@@ -5,6 +5,7 @@ RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f soft
   && apt-get update \
   && apt-get install --no-install-recommends --allow-change-held-packages -y \
   wget \
+  zip \
   unzip \
   git \
   make \

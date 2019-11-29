@@ -48,6 +48,7 @@ cd /opt/workspace
 SOURCE=$(pwd)
 F_CPU=80
 FLASH_SIZE="4M"
+TEST_SCRIPT=0
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
 
@@ -73,6 +74,10 @@ else
     SOURCE="${arduino_source}"
   fi
 
+  if [ ! -z "${arduino_test}" ]; then
+    TEST_SCRIPT="${arduino_test}"
+  fi
+
   echo "- board: ${BOARD}"
   echo "- libs: ${arduino_libs}"
   echo "- flash_ld: ${arduino_flash_ld} (esp8266)"
@@ -80,6 +85,7 @@ else
   echo "- f_cpu: $F_CPU"
   echo "- flash_size: $FLASH_SIZE"
   echo "- source: $SOURCE"
+  echo "- test_script: $TEST_SCRIPT"
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
@@ -141,12 +147,25 @@ if [[ ! -f $INO_FILE ]]; then
 fi
 
 # Cleanup mess if any...
-rm -rf ${SOURCE}/test
+#rm -rf ${SOURCE}/test
 rm -rf ${SOURCE}/.development
 rm -rf ${SOURCE}/.pioenvs
 rm -rf ${SOURCE}/build/**
 
-echo "==================== BUILDER STARTED ========================"
+echo "==================== TEST PHASE ========================"
+
+if [[ ! -z $TEST_SCRIPT ]; then
+  echo "Running test script ${TEST_SCRIPT}"
+  # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
+  $( $TEST_SCRIPT )
+else
+  echo "No test script defined."
+fi
+
+
+echo "==================== TEST PHASE COMPLETED ========================"
+
+echo "==================== BUILD PHASE ========================"
 
 # exit on error
 set +e
@@ -169,8 +188,6 @@ else
   echo "Build command: ${CMD}"
   $(${CMD})
 fi
-
-echo "==================== BUILDER COMPLETED ========================"
 
 #
 # Export artefacts
@@ -212,7 +229,8 @@ fi
 
 # Report build status using logfile
 if [[ $RESULT == 0 ]]; then
-  echo "THiNX BUILD SUCCESSFUL."
+  echo "==================== BUILD PHASE SUCCESSFUL ========================"
 else
-  echo "THiNX BUILD FAILED: $RESULT"
+  echo "==================== BUILD PHASE FAILED ========================"
+  echo "RESULT: $RESULT"
 fi
