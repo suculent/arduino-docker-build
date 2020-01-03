@@ -221,11 +221,13 @@ BIN_FILE=$(find . -name '*.bin' | head -n 1)
 ELF_FILE=$(find . -name '*.elf' | head -n 1)
 
 if [[ ! -z $BIN_FILE ]]; then
+  cp -v $BIN_FILE ../firmare.bin
   mv -v $BIN_FILE firmware.bin
   RESULT=0
 fi
 
 if [[ ! -z $ELF_FILE ]]; then
+  cp -v $ELF_FILE ../firmare.elf
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
   mv -v $ELF_FILE firmware.elf
 fi
@@ -241,4 +243,11 @@ if [[ $RESULT == 0 ]]; then
 else
   echo "==================== BUILD PHASE FAILED ========================"
   echo "RESULT: $RESULT"
+fi
+
+# Report build status using logfile
+if [[ $? == 0 ]]; then
+  echo "THiNX BUILD SUCCESSFUL."
+else
+  echo "THiNX BUILD FAILED: $?"
 fi
