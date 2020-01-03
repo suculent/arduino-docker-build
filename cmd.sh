@@ -154,7 +154,7 @@ rm -rf ${SOURCE}/build/**
 
 echo "==================== TEST PHASE ========================"
 
-if [[ ! -z $TEST_SCRIPT ]; then
+if [[ ! -z $TEST_SCRIPT ]]; then
   echo "Running test script ${TEST_SCRIPT}"
   # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
   $( $TEST_SCRIPT )
