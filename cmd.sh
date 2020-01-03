@@ -152,7 +152,7 @@ rm -rf ${SOURCE}/.development
 rm -rf ${SOURCE}/.pioenvs
 rm -rf ${SOURCE}/build/**
 
-echo "==================== TEST PHASE ========================"
+echo "==================== TEST PHASE ========================\n"
 
 if [[ -f $TEST_SCRIPT ]]; then
   echo "Running test script ${TEST_SCRIPT}"
@@ -163,9 +163,9 @@ else
 fi
 
 
-echo "==================== TEST PHASE COMPLETED ========================"
+echo "==================== TEST PHASE COMPLETED ========================\n"
 
-echo "==================== BUILD PHASE ========================"
+echo "==================== BUILD PHASE ========================\n"
 
 # exit on error
 set +e
@@ -174,7 +174,6 @@ if [[ ! -z $@ ]]; then
   echo "Running builder..."
   /opt/arduino/arduino "$@"
 else
-  ls
   echo "Running builder..."
   echo "Sketch: $INO_FILE in: $(pwd)"
   echo "Target board: $BOARD"
@@ -184,16 +183,25 @@ else
   if [[ ${arduino_arch} == "esp8266" ]]; then
     FLASH_INSERT="--pref build.flash_ld=$arduino_flash_ld"
   fi
-  CMD="/opt/arduino/arduino --verify --verbose-build $FLASH_INSERT --pref build.path=/opt/workspace/build --pref build.f_cpu=$arduino_f_cpu --pref build.flash_size=$arduino_flash_size --pref build.flash_ld=${arduino_flash_ld} --board $BOARD $INO_FILE"
-  echo "Build command: ${CMD}"
-  $(${CMD})
+
+  CMD="/opt/arduino/arduino \
+  --verify \
+  --verbose-build $FLASH_INSERT \
+  --pref build.path=/opt/workspace/build \
+  --pref build.f_cpu=$arduino_f_cpu \
+  --pref build.flash_size=$arduino_flash_size \
+  --pref build.flash_ld=${arduino_flash_ld} \
+  --board $BOARD $INO_FILE"
+
+  echo "Executing Build command: ${CMD}"
+  $CMD
 fi
 
 #
 # Export artefacts
 #
 
-echo "Seaching for Lint results..."
+echo "Seaching for Lint results...\n"
 if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
@@ -205,7 +213,7 @@ fi
 BUILD_PATH="/opt/workspace/build"
 cd $BUILD_PATH
 
-echo "Build artefacts in $BUILD_PATH:"
+echo "Listing build artefacts in ${BUILD_PATH}:"
 ls
 
 # TODO: find one would be safer
