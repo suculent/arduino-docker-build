@@ -80,8 +80,16 @@ else
 
   echo "- board: ${BOARD}"
   echo "- libs: ${arduino_libs}"
-  echo "- flash_ld: ${arduino_flash_ld} (esp8266)"
-  echo "- partitions: ${PARTITIONS} (esp32)"
+
+  if [[ ! -z ${arduino_flash_ld} ]]; then
+    echo "- flash_ld: ${arduino_flash_ld} (esp8266)"
+  fi
+
+  if [[ ! -z ${arduino_partitions} ]]; then
+    PARTITIONS=${arduino_partitions} # may be deprecated
+    echo "- partitions: ${arduino_partitions} (esp32)"
+  fi
+
   echo "- f_cpu: $F_CPU"
   echo "- flash_size: $FLASH_SIZE"
   echo "- source: $SOURCE"
