@@ -56,9 +56,7 @@ if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
   exit 1
 else
-  echo "Reading thinx.yml:"
-  cat "$YMLFILE"
-  echo
+    
   eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
 
