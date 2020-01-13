@@ -1,5 +1,8 @@
 FROM ubuntu:16.04
 
+ENV ARDUINO_VERSION="1.8.10"
+ENV ARDUINO_ESP_VERSION="2.6.3"
+
 RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f software-properties-common \
   && add-apt-repository ppa:openjdk-r/ppa \
   && apt-get update \
@@ -32,11 +35,11 @@ RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f soft
 
 WORKDIR /opt
 
-RUN curl https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz > ./arduino-1.8.9-linux64.tar.xz \
- && unxz ./arduino-1.8.9-linux64.tar.xz \
- && tar -xvf arduino-1.8.9-linux64.tar \
- && rm -rf arduino-1.8.9-linux64.tar \
- && mv ./arduino-1.8.9 ./arduino \
+RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
+ && unxz ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
+ && tar -xvf arduino-$ARDUINO_VERSION-linux64.tar \
+ && rm -rf arduino-$ARDUINO_VERSION-linux64.tar \
+ && mv ./arduino-$ARDUINO_VERSION ./arduino \
  && cd ./arduino \
  && ./install.sh
 
@@ -54,7 +57,7 @@ RUN python get.py
 WORKDIR /opt/arduino/hardware/espressif
 RUN git clone https://github.com/esp8266/Arduino.git esp8266
 WORKDIR /opt/arduino/hardware/espressif/esp8266
-RUN git checkout tags/2.5.2 \
+RUN git checkout tags/$ARDUINO_ESP_VERSION \
   && rm -rf ./**/examples/**
 
 WORKDIR /opt/arduino/hardware/espressif/esp8266/tools
