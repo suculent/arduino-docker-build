@@ -4,6 +4,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=alert_status)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=security_rating)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsuculent%2Farduino-docker-build.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsuculent%2Farduino-docker-build?ref=badge_shield)
 
 Run the [Arduino](http://arduino.cc) command-line builder in a docker container. This image will take it from there and turn your Arduino project into a binary which you then can [flash to the ESP8266/ESP32](http://nodemcu.readthedocs.org/en/dev/en/flash/).
 
@@ -97,3 +98,7 @@ Thanks to [Marcel Stoer](http://pfalcon-oe.blogspot.com/) who inspired me with h
 
 ## Author
 [Matěj Sychra @ THiNX](http://thinx.cloud)
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsuculent%2Farduino-docker-build.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsuculent%2Farduino-docker-build?ref=badge_large)
