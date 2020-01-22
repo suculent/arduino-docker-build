@@ -222,7 +222,6 @@ cd $BUILD_PATH
 echo "Listing build artefacts in ${BUILD_PATH}:"
 ls
 
-# TODO: find one would be safer
 BIN_FILE=$(find . -name '*.bin' | head -n 1)
 ELF_FILE=$(find . -name '*.elf' | head -n 1)
 SIG_FILE=$(find . -name '*.bin.signed' | head -n 1)
