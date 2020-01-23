@@ -239,6 +239,8 @@ if [[ ! -z $ELF_FILE ]]; then
 fi
 
 if [[ ! -z $SIG_FILE ]]; then
+  rm -rf firmware.bin
+  rm -rf ../firmware.bin
   cp -v $SIG_FILE ../firmare.bin
   mv -v $SIG_FILE firmware.bin
   RESULT=0
