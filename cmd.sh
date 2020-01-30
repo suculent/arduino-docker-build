@@ -224,21 +224,25 @@ ls
 
 BIN_FILE=$(find . -name '*.bin' | head -n 1)
 ELF_FILE=$(find . -name '*.elf' | head -n 1)
-SIG_FILE=$(find . -name '*.bin.signed' | head -n 1)
+SIG_FILE=$(find . -name '*.signed' | head -n 1)
 
 if [[ ! -z $BIN_FILE ]]; then
+  echo $BIN_FILE
   cp -v $BIN_FILE ../firmare.bin
   mv -v $BIN_FILE firmware.bin
   RESULT=0
 fi
 
 if [[ ! -z $ELF_FILE ]]; then
+  echo $ELF_FILE
   cp -v $ELF_FILE ../firmare.elf
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
   mv -v $ELF_FILE firmware.elf
 fi
 
 if [[ ! -z $SIG_FILE ]]; then
+  echo "Exporting signed binary...\n"
+  echo $SIG_FILE
   rm -rf firmware.bin
   rm -rf ../firmware.bin
   cp -v $SIG_FILE ../firmare.bin
@@ -248,14 +252,15 @@ fi
 
 if [[ -f "./build.options.json" ]]; then
   cat ./build.options.json
+  cp ./build.options.json ../build.options.json
   echo ""
 fi
 
 # Report build status using logfile
 if [[ $RESULT == 0 ]]; then
-  echo "==================== BUILD PHASE SUCCESSFUL ========================"
+  echo "==================== BUILD PHASE SUCCESSFUL ========================\n"
 else
-  echo "==================== BUILD PHASE FAILED ========================"
+  echo "==================== BUILD PHASE FAILED ========================\n"
   echo "RESULT: $RESULT"
 fi
 
