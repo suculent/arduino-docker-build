@@ -117,6 +117,9 @@ if [ -z "$DISPLAY" ]; then
   # export DISPLAY=:0.0
 fi
 
+echo "Cleaning libraries..."
+rm -rf /opt/arduino/libraries/**
+
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
     echo "Copying user libraries..."
