@@ -124,6 +124,7 @@ rm -rf /opt/arduino/libraries/**
 if [ -d "./lib" ]; then
     echo "Copying user libraries..."
     cp -fR ./lib/** /opt/arduino/libraries
+    # cp -fR ./lib8266/** /opt/arduino/libraries # should be ESP8266 only!
 fi
 
 # Use default library if none set in thinx.yml

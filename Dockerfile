@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 
 ENV ARDUINO_VERSION="1.8.10"
-ENV ARDUINO_ESP_VERSION="2.6.3"
+ENV ARDUINO_ESP_VERSION="2.7.1"
 
 RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f software-properties-common \
   && add-apt-repository ppa:openjdk-r/ppa \
