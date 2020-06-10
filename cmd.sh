@@ -123,7 +123,7 @@ rm -rf /opt/arduino/libraries/**
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
     echo "Copying user libraries..."
-    cp -fR ./lib/** /opt/arduino/libraries
+    cp -vfR ./lib/** /opt/arduino/libraries
     # cp -fR ./lib8266/** /opt/arduino/libraries # should be ESP8266 only!
 fi
 
@@ -196,7 +196,7 @@ else
 
   CMD="/opt/arduino/arduino \
   --verify \
-  --verbose-build $FLASH_INSERT \
+  $FLASH_INSERT \
   --pref build.path=/opt/workspace/build \
   --pref build.f_cpu=$arduino_f_cpu \
   --pref build.flash_size=$arduino_flash_size \
