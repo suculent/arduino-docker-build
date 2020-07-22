@@ -232,7 +232,7 @@ SIG_FILE=$(find . -name '*.signed' | head -n 1)
 
 if [[ ! -z $BIN_FILE ]]; then
   echo $BIN_FILE
-  cp -v $BIN_FILE ../firmare.bin
+  cp -v $BIN_FILE ../firmware.bin
   mv -v $BIN_FILE firmware.bin
   RESULT=0
 fi
@@ -249,7 +249,7 @@ if [[ ! -z $SIG_FILE ]]; then
   echo $SIG_FILE
   rm -rf firmware.bin
   rm -rf ../firmware.bin
-  cp -v $SIG_FILE ../firmare.bin
+  cp -v $SIG_FILE ../firmware.bin
   mv -v $SIG_FILE firmware.bin
   RESULT=0
 fi
