@@ -233,15 +233,15 @@ SIG_FILE=$(find . -name '*.signed' | head -n 1)
 if [[ ! -z $BIN_FILE ]]; then
   echo $BIN_FILE
   cp -v $BIN_FILE ../firmware.bin
-  mv -v $BIN_FILE firmware.bin
+  cp -v $BIN_FILE ./firmware.bin
   RESULT=0
 fi
 
 if [[ ! -z $ELF_FILE ]]; then
   echo $ELF_FILE
-  cp -v $ELF_FILE ../firmare.elf
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
-  mv -v $ELF_FILE firmware.elf
+  cp -v $ELF_FILE ../firmware.elf
+  cp -v $ELF_FILE ./firmware.elf
 fi
 
 if [[ ! -z $SIG_FILE ]]; then
@@ -250,7 +250,7 @@ if [[ ! -z $SIG_FILE ]]; then
   rm -rf firmware.bin
   rm -rf ../firmware.bin
   cp -v $SIG_FILE ../firmware.bin
-  mv -v $SIG_FILE firmware.bin
+  cp -v $SIG_FILE ./firmware.bin
   RESULT=0
 fi
 
