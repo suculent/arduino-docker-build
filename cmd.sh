@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "arduino-docker-build-0.6.0"
+
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
 
 chmod +x /opt/arduino/arduino
@@ -162,20 +164,20 @@ rm -rf ${SOURCE}/.development
 rm -rf ${SOURCE}/.pioenvs
 rm -rf ${SOURCE}/build/**
 
-echo "==================== TEST PHASE ========================\n"
+echo "==================== TEST PHASE ========================"
 
 if [[ -f $TEST_SCRIPT ]]; then
   echo "Running test script ${TEST_SCRIPT}"
   # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
   $( $TEST_SCRIPT )
 else
-  echo "No test script defined."
+  echo "No test script defined.\n"
 fi
 
 
-echo "==================== TEST PHASE COMPLETED ========================\n"
+echo "==================== TEST PHASE COMPLETED ========================"
 
-echo "==================== BUILD PHASE ========================\n"
+echo "==================== BUILD PHASE ========================"
 
 # exit on error
 set +e
