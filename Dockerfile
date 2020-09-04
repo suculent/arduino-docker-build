@@ -3,7 +3,7 @@ FROM ubuntu:16.04
 ARG GIT_TAG
 
 ENV ARDUINO_VERSION="1.8.13"
-ENV ARDUINO_ESP_VERSION="2.7.2"
+ENV ARDUINO_ESP_VERSION="2.7.4"
 ENV GIT_TAG=${GIT_TAG}
 
 RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f software-properties-common \
