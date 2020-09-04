@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.6.0"
+echo "arduino-docker-build-0.6.2"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -54,6 +54,9 @@ FLASH_SIZE="4M"
 TEST_SCRIPT=0
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
+ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
+
+ENVOUT="${WORKDIR}/environment.h"
 
 if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
@@ -79,6 +82,15 @@ else
     TEST_SCRIPT="${arduino_test}"
   fi
 
+  if [ ! -z "${arduino_test}" ]; then
+    TEST_SCRIPT="${arduino_test}"
+  fi
+
+  # output filename for the per-device environment file
+  if [ ! -z "${environment_target}" ]; then
+    ENVOUT="${WORKDIR}/${environment_target}" # e.g. src/env.h
+  fi
+
   echo "- board: ${BOARD}"
   echo "- libs: ${arduino_libs}"
 
@@ -95,6 +107,26 @@ else
   echo "- flash_size: $FLASH_SIZE"
   echo "- source: $SOURCE"
   echo "- test_script: $TEST_SCRIPT"
+fi
+
+echo "ENVOUT: ${ENVOUT}"
+
+if [[ ! -f $ENVFILE ]]; then
+  echo "No environment.json found"
+else
+
+  echo "Generating per-device environment JSON..."
+
+  # Generate C-header from key-value JSON object
+  arr=()
+  echo "/* This file is auto-generated. */" >> ${ENVOUT}
+  while IFS='' read -r keyname; do
+    arr+=("$keyname")
+    VAL=$(jq '.'$keyname $ENVFILE)
+    NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
+    echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
+  done < <(jq -r 'keys[]' $ENVFILE)
+
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
@@ -196,6 +228,8 @@ else
   if [[ ${arduino_arch} == "esp8266" ]]; then
     FLASH_INSERT="--pref build.flash_ld=$arduino_flash_ld"
   fi
+
+  # CMD="pio build -D${KEYGURU_SSID}..."
 
   CMD="/opt/arduino/arduino \
   --verify \
