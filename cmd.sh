@@ -54,9 +54,6 @@ FLASH_SIZE="4M"
 TEST_SCRIPT=0
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
-ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
-
-ENVOUT="${WORKDIR}/environment.h"
 
 if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
@@ -109,14 +106,15 @@ else
   echo "- test_script: $TEST_SCRIPT"
 fi
 
+# Parse environment.json
+ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
+ENVOUT="${WORKDIR}/environment.h"
 echo "ENVOUT: ${ENVOUT}"
 
 if [[ ! -f $ENVFILE ]]; then
   echo "No environment.json found"
 else
-
   echo "Generating per-device environment JSON..."
-
   # Generate C-header from key-value JSON object
   arr=()
   echo "/* This file is auto-generated. */" >> ${ENVOUT}
@@ -126,8 +124,8 @@ else
     NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
     echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
   done < <(jq -r 'keys[]' $ENVFILE)
+  echo "ENVOUT CONTENTS (check CRLFs, please):"
   cat ${ENVOUT} # leak, remove later
-
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
