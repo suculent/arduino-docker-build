@@ -40,7 +40,7 @@ RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f soft
 WORKDIR /opt
 
 RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
- && unxz ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
+ && unxz -q ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
  && tar -xvf arduino-$ARDUINO_VERSION-linux64.tar \
  && rm -rf arduino-$ARDUINO_VERSION-linux64.tar \
  && mv ./arduino-$ARDUINO_VERSION ./arduino \

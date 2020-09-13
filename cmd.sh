@@ -126,6 +126,7 @@ else
     NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
     echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
   done < <(jq -r 'keys[]' $ENVFILE)
+  cat ${ENVOUT} # leak, remove later
 
 fi
 
