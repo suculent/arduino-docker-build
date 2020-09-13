@@ -34,6 +34,7 @@ RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f soft
   libxtst6 \
   libxi6 \
   openjdk-8-jre \
+  jq \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt
