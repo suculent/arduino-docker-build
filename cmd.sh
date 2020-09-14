@@ -63,21 +63,21 @@ else
 
   eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
+  echo "- board: ${BOARD}"
 
   if [ ! -z "${arduino_flash_size}" ]; then
     FLASH_SIZE="${arduino_flash_size}"
+    echo "- flash_size: $FLASH_SIZE"
   fi
 
   if [ ! -z "${arduino_f_cpu}" ]; then
     F_CPU="${arduino_f_cpu}"
+    echo "- f_cpu: $F_CPU"
   fi
 
   if [ ! -z "${arduino_source}" ]; then
     SOURCE="${arduino_source}"
-  fi
-
-  if [ ! -z "${arduino_test}" ]; then
-    TEST_SCRIPT="${arduino_test}"
+    echo "- source: $SOURCE"
   fi
 
   if [ ! -z "${arduino_test}" ]; then
@@ -87,9 +87,9 @@ else
   # output filename for the per-device environment file
   if [ ! -z "${environment_target}" ]; then
     ENVOUT="${WORKDIR}/${environment_target}" # e.g. src/env.h
+    echo "- ENVOUT: ${ENVOUT}"
   fi
 
-  echo "- board: ${BOARD}"
   echo "- libs: ${arduino_libs}"
 
   if [[ ! -z ${arduino_flash_ld} ]]; then
@@ -101,9 +101,9 @@ else
     echo "- partitions: ${arduino_partitions} (esp32)"
   fi
 
-  echo "- f_cpu: $F_CPU"
-  echo "- flash_size: $FLASH_SIZE"
-  echo "- source: $SOURCE"
+  
+  
+  
   echo "- test_script: $TEST_SCRIPT"
 fi
 
@@ -114,9 +114,12 @@ if [[ ! -f $ENVFILE ]]; then
   echo "No environment.json found"
 else
   echo "Generating per-device environment headers to: ${ENVOUT}"
+  echo
   # Generate C-header from key-value JSON object
   arr=()
   # Print out header, will clear previous contents.
+  echo "Touching file at ${ENVOUT}"
+  touch ${ENVOUT}
   echo "/* This file is auto-generated. */" > ${ENVOUT}
   while IFS='' read -r keyname; do
     arr+=("$keyname")
