@@ -10,11 +10,13 @@ chmod +x /opt/arduino/arduino
 # Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
 # - KEY=<value>
 
+WORKDIR=$(pwd)
+
 if [ -z "$WORKDIR" ]; then
   cd $WORKDIR
 else
   echo "No custom working directory given, using current..."
-  WORKDIR=$(PWD)
+  echo $WORKDIR
 fi
 
 parse_yaml() {
@@ -56,7 +58,6 @@ FLASH_SIZE="4M"
 TEST_SCRIPT=0
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
-ENVOUT="${WORKDIR}/environment.h"
 
 if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
@@ -103,14 +104,14 @@ else
     echo "- partitions: ${arduino_partitions} (esp32)"
   fi
 
-  
-  
-  
   echo "- test_script: $TEST_SCRIPT"
 fi
 
 # Parse environment.json
 ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
+ENVOUT=$(find /opt/workspace -name "environment.h" | head -n 1)
+
+echo "Will write to ENVOUT ${ENVOUT}"
 
 if [[ ! -f $ENVFILE ]]; then
   echo "No environment.json found"
