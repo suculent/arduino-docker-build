@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.6.5"
+echo "arduino-docker-build-0.7.6"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
