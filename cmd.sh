@@ -7,6 +7,16 @@ export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
 
 chmod +x /opt/arduino/arduino
 
+# Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
+# - KEY=<value>
+
+if [ -z "$WORKDIR" ]; then
+  cd $WORKDIR
+else
+  echo "No custom working directory given, using current..."
+  WORKDIR=$(PWD)
+fi
+
 parse_yaml() {
     local prefix=$2
     local s
@@ -30,15 +40,7 @@ parse_yaml() {
 
 set +e # don't skip errors ("Selected library is not available" on install)
 
-# Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
-# - KEY=<value>
 
-if [ -z "$WORKDIR" ]; then
-  cd $WORKDIR
-else
-  echo "No custom working directory given, using current..."
-  WORKDIR=$(PWD)
-fi
 
 cd /opt/workspace
 
