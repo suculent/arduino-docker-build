@@ -157,7 +157,7 @@ rm -rf /opt/arduino/libraries/**
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
     echo "Copying user libraries..."
-    cp -vfR ./lib/** /opt/arduino/libraries
+    cp -fR ./lib/** /opt/arduino/libraries
     # cp -fR ./lib8266/** /opt/arduino/libraries # should be ESP8266 only!
 fi
 
@@ -174,8 +174,8 @@ for lib in ${arduino_libs}; do
   set -e
 done
 
-echo "Installed libraries:"
-ls -la "/opt/arduino/libraries"
+#echo "Installed libraries:"
+#ls -la "/opt/arduino/libraries"
 
 # before searching INOs, clear mess...
 rm -rf ${SOURCE}/.development
