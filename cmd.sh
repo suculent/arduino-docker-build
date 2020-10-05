@@ -129,7 +129,6 @@ else
     VAL=$(jq '.'$keyname $ENVFILE)
     NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
     echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
-    echo ""
   done < <(jq -r 'keys[]' $ENVFILE)
   echo "ENVOUT CONTENTS (check CRLFs, please):"
   cat ${ENVOUT} # leak, remove later
@@ -210,7 +209,8 @@ if [[ -f $TEST_SCRIPT ]]; then
   # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
   $( $TEST_SCRIPT )
 else
-  echo "No test script defined.\n"
+  echo "No test script defined."
+  echo
 fi
 
 
