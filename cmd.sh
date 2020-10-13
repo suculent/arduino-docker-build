@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.7.7"
+echo "arduino-docker-build-0.7.8"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -10,14 +10,13 @@ chmod +x /opt/arduino/arduino
 # Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
 # - KEY=<value>
 
+cd /opt/workspace
+
 WORKDIR=$(pwd)
 
-if [ -z "$WORKDIR" ]; then
-  cd $WORKDIR
-else
-  echo "No custom working directory given, using current..."
-  echo $WORKDIR
-fi
+pwd
+
+ls
 
 parse_yaml() {
     local prefix=$2
@@ -42,9 +41,6 @@ parse_yaml() {
 
 set +e # don't skip errors ("Selected library is not available" on install)
 
-
-
-cd /opt/workspace
 
 #
 # Build
