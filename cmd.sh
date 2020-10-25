@@ -14,9 +14,9 @@ cd /opt/workspace
 
 WORKDIR=$(pwd)
 
-pwd
+echo "Current working directory ${WORKDIR} contents:"
 
-ls
+ls -la
 
 parse_yaml() {
     local prefix=$2
@@ -40,7 +40,6 @@ parse_yaml() {
 }
 
 set +e # don't skip errors ("Selected library is not available" on install)
-
 
 #
 # Build
