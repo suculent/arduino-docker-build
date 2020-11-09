@@ -125,8 +125,6 @@ else
     NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
     echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
   done < <(jq -r 'keys[]' $ENVFILE)
-  echo "ENVOUT CONTENTS (check CRLFs, please):"
-  cat ${ENVOUT} # leak, remove later
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
