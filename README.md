@@ -82,6 +82,13 @@ You can pass the following optional parameters to the Docker build like so `dock
 
 - `WORKDIR` Just an parametrization example, will deprecate or be used for additional libraries.
 
+#### Environment support
+
+The builder is able to re-create designated environment.h (exact filename should be defined in thinx.yml) from environment.json.
+The environment.h is used to customize variables in project.
+
+In case you need to modify GCC CFLAGS using environment variables, use the `cflags` variable which will be passed to Arduino builder since 0.8.0.
+
 ### Flashing the built binary
 There are several [tools to flash the firmware](http://nodemcu.readthedocs.org/en/dev/en/flash/) to the ESP8266/ESP32. If you were to use [esptool](https://github.com/themadinventor/esptool) (like I do) you'd run:
 

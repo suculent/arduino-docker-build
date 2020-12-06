@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.7.8"
+echo "arduino-docker-build-0.8.0"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -51,6 +51,7 @@ SOURCE=$(pwd)
 F_CPU=80
 FLASH_SIZE="4M"
 TEST_SCRIPT=0
+CFLAGS=""
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
 
@@ -122,9 +123,16 @@ else
   while IFS='' read -r keyname; do
     arr+=("$keyname")
     VAL=$(jq '.'$keyname $ENVFILE)
-    NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
-    echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
+
+    if [[ ${keyname} == "cflags" ]]; then
+      $CFLAGS+="${VAL}"
+    else 
+      NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
+      echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
+    fi
   done < <(jq -r 'keys[]' $ENVFILE)
+  echo "ENVOUT CONTENTS (check CRLFs, please):"
+  cat ${ENVOUT} # leak, remove later
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
@@ -230,14 +238,29 @@ else
 
   # CMD="pio build -D${KEYGURU_SSID}..."
 
-  CMD="/opt/arduino/arduino \
-  --verify \
-  $FLASH_INSERT \
-  --pref build.path=/opt/workspace/build \
-  --pref build.f_cpu=$arduino_f_cpu \
-  --pref build.flash_size=$arduino_flash_size \
-  --pref build.flash_ld=${arduino_flash_ld} \
-  --board $BOARD $INO_FILE"
+  # original implementation without optional cflags (refactor to $CFLAGS_INSERT)
+  if [[ "$CFLAGS" == "" ]]; then
+    echo "Building normally."
+    CMD="/opt/arduino/arduino \
+    --verify \
+    $FLASH_INSERT \
+    --pref build.path=/opt/workspace/build \
+    --pref build.f_cpu=$arduino_f_cpu \
+    --pref build.flash_size=$arduino_flash_size \
+    --pref build.flash_ld=${arduino_flash_ld} \
+    --board $BOARD $INO_FILE"
+  else
+    echo "Building with CFLAGS: ${CFLAGS}"
+    CMD="/opt/arduino/arduino \
+    --verify \
+    $FLASH_INSERT \
+    --pref build.path=/opt/workspace/build \
+    --pref build.f_cpu=$arduino_f_cpu \
+    --pref build.flash_size=$arduino_flash_size \
+    --pref build.flash_ld=${arduino_flash_ld} \
+    --pref compiler.cpp.extra_flags=${CFLAGS} \
+    --board $BOARD $INO_FILE"
+  fi
 
   echo "Executing Build command: ${CMD}"
   $CMD
