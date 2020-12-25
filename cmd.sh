@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.8.0"
+echo "arduino-docker-build-0.8.1"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -13,10 +13,6 @@ chmod +x /opt/arduino/arduino
 cd /opt/workspace
 
 WORKDIR=$(pwd)
-
-echo "Current working directory ${WORKDIR} contents:"
-
-ls -la
 
 parse_yaml() {
     local prefix=$2
@@ -131,8 +127,6 @@ else
       echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
     fi
   done < <(jq -r 'keys[]' $ENVFILE)
-  echo "ENVOUT CONTENTS (check CRLFs, please):"
-  cat ${ENVOUT} # leak, remove later
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
