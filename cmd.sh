@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.8.2"
+echo "arduino-docker-build-0.8.3"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -264,7 +264,7 @@ fi
 # Export artefacts
 #
 
-echo "Seaching for Lint results...\n"
+echo "Seaching for Lint results..."
 if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
@@ -286,7 +286,9 @@ SIG_FILE=$(find . -name '*.signed' | head -n 1)
 if [[ ! -z $BIN_FILE ]]; then
   echo $BIN_FILE
   cp -v $BIN_FILE ../firmware.bin
+  chown 775 ../firmware.bin
   mv -v $BIN_FILE ./firmware.bin
+  chown 775 ./firmware.bin
   RESULT=0
 fi
 
@@ -294,14 +296,13 @@ if [[ ! -z $ELF_FILE ]]; then
   echo $ELF_FILE
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
   cp -v $ELF_FILE ../firmware.elf
-  sudo chown 775 ../firmware.elf
+  chown 775 ../firmware.elf
   mv -v $ELF_FILE ./firmware.elf
-  sudo chown 775 ./firmware.elf
-  
+  chown 775 ./firmware.elf
 fi
 
 if [[ ! -z $SIG_FILE ]]; then
-  echo "Exporting signed binary...\n"
+  echo "Exporting signed binary..."
   echo $SIG_FILE
   rm -rf firmware.bin
   rm -rf ../firmware.bin
@@ -315,19 +316,20 @@ fi
 if [[ -f "./build.options.json" ]]; then
   cat ./build.options.json
   cp ./build.options.json ../build.options.json
+  chown 775 ./build.options.json
+  chown 775 ../build.options.json
   echo ""
 fi
 
 # Report build status using logfile
-if [[ $RESULT == 0 ]]; then
-  echo "==================== BUILD PHASE SUCCESSFUL ========================\n"
-else
-  echo "==================== BUILD PHASE FAILED ========================\n"
+if [[ $RESULT != 0 ]]; then
+  echo "==================== BUILD PHASE FAILED ========================"
   echo "RESULT: $RESULT"
 fi
 
 # Report build status using logfile
 if [[ $? == 0 ]]; then
+  # Do not touch, or be careful. This phrase is used later in log parsers to catch success state.
   echo "THiNX BUILD SUCCESSFUL."
 else
   echo "THiNX BUILD FAILED: $?"
