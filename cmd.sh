@@ -294,7 +294,10 @@ if [[ ! -z $ELF_FILE ]]; then
   echo $ELF_FILE
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
   cp -v $ELF_FILE ../firmware.elf
+  sudo chown 775 ../firmware.elf
   mv -v $ELF_FILE ./firmware.elf
+  sudo chown 775 ./firmware.elf
+  
 fi
 
 if [[ ! -z $SIG_FILE ]]; then
@@ -303,7 +306,9 @@ if [[ ! -z $SIG_FILE ]]; then
   rm -rf firmware.bin
   rm -rf ../firmware.bin
   cp -v $SIG_FILE ../firmware.bin
+  chown 775 ../firmware.bin
   mv -v $SIG_FILE ./firmware.bin
+  chown 775 ./firmware.bin
   RESULT=0
 fi
 
