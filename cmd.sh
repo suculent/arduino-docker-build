@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.8.2"
+echo "arduino-docker-build-0.8.5"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -197,6 +197,8 @@ rm -rf ${SOURCE}/.development
 rm -rf ${SOURCE}/.pioenvs
 rm -rf ${SOURCE}/build/**
 
+echo "-"
+
 if [[ -f $TEST_SCRIPT ]]; then
   echo "Running test script ${TEST_SCRIPT}"
   # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
@@ -206,6 +208,7 @@ else
   echo
 fi
 
+echo "-"
 
 # exit on error
 set +e
@@ -258,7 +261,7 @@ fi
 # Export artefacts
 #
 
-echo "Seaching for Lint results...\n"
+echo "Seaching for Lint results..."
 if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
@@ -280,7 +283,9 @@ SIG_FILE=$(find . -name '*.signed' | head -n 1)
 if [[ ! -z $BIN_FILE ]]; then
   echo $BIN_FILE
   cp -v $BIN_FILE ../firmware.bin
+  chmod 775 ../firmware.bin
   mv -v $BIN_FILE ./firmware.bin
+  chmod 775 ./firmware.bin
   RESULT=0
 fi
 
@@ -288,34 +293,34 @@ if [[ ! -z $ELF_FILE ]]; then
   echo $ELF_FILE
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
   cp -v $ELF_FILE ../firmware.elf
+  chmod 775 ../firmware.elf
   mv -v $ELF_FILE ./firmware.elf
+  chmod 775 ./firmware.elf
 fi
 
 if [[ ! -z $SIG_FILE ]]; then
-  echo "Exporting signed binary...\n"
+  echo "Exporting signed binary..."
   echo $SIG_FILE
   rm -rf firmware.bin
   rm -rf ../firmware.bin
   cp -v $SIG_FILE ../firmware.bin
+  chmod 775 ../firmware.bin
   mv -v $SIG_FILE ./firmware.bin
+  chmod 775 ./firmware.bin
   RESULT=0
 fi
-
-chmod 665 ./firmware.*
-chmod 665 ../firmware.*
 
 if [[ -f "./build.options.json" ]]; then
   cat ./build.options.json
   cp ./build.options.json ../build.options.json
-  echo ""
+  chmod 775 ./build.options.json
+  chmod 775 ../build.options.json
 fi
-
-echo ""
 
 # Report build status using logfile
 if [[ $RESULT == 0 ]]; then
+  # Do not touch, or be careful. This phrase is used later in log parsers to catch success state.
   echo "THiNX BUILD SUCCESSFUL."
 else
   echo "THiNX BUILD FAILED: $?"
 fi
-
