@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.8.1"
+echo "arduino-docker-build-0.8.2"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -197,8 +197,6 @@ rm -rf ${SOURCE}/.development
 rm -rf ${SOURCE}/.pioenvs
 rm -rf ${SOURCE}/build/**
 
-echo "==================== TEST PHASE ========================"
-
 if [[ -f $TEST_SCRIPT ]]; then
   echo "Running test script ${TEST_SCRIPT}"
   # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
@@ -208,10 +206,6 @@ else
   echo
 fi
 
-
-echo "==================== TEST PHASE COMPLETED ========================"
-
-echo "==================== BUILD PHASE ========================"
 
 # exit on error
 set +e
@@ -307,23 +301,21 @@ if [[ ! -z $SIG_FILE ]]; then
   RESULT=0
 fi
 
+chmod 665 ./firmware.*
+chmod 665 ../firmware.*
+
 if [[ -f "./build.options.json" ]]; then
   cat ./build.options.json
   cp ./build.options.json ../build.options.json
   echo ""
 fi
 
-# Report build status using logfile
-if [[ $RESULT == 0 ]]; then
-  echo "==================== BUILD PHASE SUCCESSFUL ========================\n"
-else
-  echo "==================== BUILD PHASE FAILED ========================\n"
-  echo "RESULT: $RESULT"
-fi
+echo ""
 
 # Report build status using logfile
-if [[ $? == 0 ]]; then
+if [[ $RESULT == 0 ]]; then
   echo "THiNX BUILD SUCCESSFUL."
 else
   echo "THiNX BUILD FAILED: $?"
 fi
+
