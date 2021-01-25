@@ -103,7 +103,7 @@ fi
 ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
 ENVOUT=$(find /opt/workspace -name "environment.h" | head -n 1)
 
-echo "Will write to ENVOUT ${ENVOUT}"
+# echo "Will write to ENVOUT ${ENVOUT}"
 
 if [[ ! -f $ENVFILE ]]; then
   echo "No environment.json found"
