@@ -227,8 +227,6 @@ else
     FLASH_INSERT="--pref build.flash_ld=$arduino_flash_ld"
   fi
 
-  # CMD="pio build -D${KEYGURU_SSID}..."
-
   # original implementation without optional cflags (refactor to $CFLAGS_INSERT)
   if [[ "$CFLAGS" == "" ]]; then
     echo "Building normally."
