@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "arduino-docker-build-0.8.5"
+echo "arduino-docker-build-0.8.6"
 echo $GIT_TAG
 
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
@@ -253,7 +253,8 @@ else
     --board $BOARD $INO_FILE"
   fi
 
-  echo "Executing Build command: ${CMD}"
+  HR_CMD=$(echo "$CMD" | tr -s ' ')
+  echo "Executing Build command: ${HR_CMD}"
   $CMD
 fi
 
@@ -308,13 +309,6 @@ if [[ ! -z $SIG_FILE ]]; then
   mv -v $SIG_FILE ./firmware.bin
   chmod 775 ./firmware.bin
   RESULT=0
-fi
-
-if [[ -f "./build.options.json" ]]; then
-  cat ./build.options.json
-  cp ./build.options.json ../build.options.json
-  chmod 775 ./build.options.json
-  chmod 775 ../build.options.json
 fi
 
 # Report build status using logfile
