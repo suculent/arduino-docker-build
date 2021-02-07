@@ -260,20 +260,16 @@ fi
 # Export artefacts
 #
 
-echo "Seaching for Lint results..."
 if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
   cp -vf "../lint.txt" $BUILD_DIR/lint.txt
 else
-  echo "No lint results found..."
+  echo "No lint results found." #  TODO: Do something with them...
 fi
 
 BUILD_PATH="/opt/workspace/build"
 cd $BUILD_PATH
-
-echo "Listing build artefacts in ${BUILD_PATH}:"
-ls
 
 BIN_FILE=$(find . -name '*.bin' | head -n 1)
 ELF_FILE=$(find . -name '*.elf' | head -n 1)
