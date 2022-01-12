@@ -6,7 +6,7 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update -qq \
+RUN apt-get -y -qq update \
   && apt-get install -qq -y --no-install-recommends -f --allow-change-held-packages -y \
   software-properties-common \
   wget \
