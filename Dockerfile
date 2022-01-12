@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM ubuntu:impish
 
 ARG GIT_TAG
 
