@@ -50,7 +50,7 @@ WORKDIR /opt/arduino/hardware/espressif
 RUN git clone --depth=1 https://github.com/espressif/arduino-esp32.git esp32
 WORKDIR /opt/arduino/hardware/espressif/esp32
 RUN git submodule update --init --recursive \
- && rm -rf ./**/examples/**
+ && rm -rf ./**/examples/** ./.git
 
 # Get ESP32 tools
 WORKDIR /opt/arduino/hardware/espressif/esp32/tools
