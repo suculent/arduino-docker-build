@@ -6,12 +6,10 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN  apt-get install -y gnupg
 
-
-RUN apt -y -qq update \
-  && apt -y -qq --no-install-recommends --allow-change-held-packages install gnupg
-
-RUN apt -y -qq --no-install-recommends --allow-change-held-packages install \
+RUN apt -y -qq update && \
+  apt -y -qq --no-install-recommends --allow-change-held-packages install \
   software-properties-common \
   wget \
   zip \
