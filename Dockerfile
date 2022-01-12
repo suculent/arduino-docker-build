@@ -6,7 +6,7 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt -y install gpgv1
+RUN apt -y install gnupg
 
 RUN apt -y -qq update \
   && apt install -qq -y --no-install-recommends -f --allow-change-held-packages \
