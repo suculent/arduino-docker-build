@@ -3,13 +3,12 @@ FROM ubuntu:jammy
 ARG GIT_TAG
 
 ENV ARDUINO_VERSION="1.8.19"
-ENV ARDUINO_ESP_VERSION="3.0.2"
 ENV GIT_TAG=${GIT_TAG}
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f software-properties-common \
-  && add-apt-repository ppa:openjdk-r/ppa \
-  && apt-get update \
-  && apt-get install --no-install-recommends --allow-change-held-packages -y \
+RUN apt-get update -qq \
+  && apt-get install -qq -y --no-install-recommends -f --allow-change-held-packages -y \
+  software-properties-common \
   wget \
   zip \
   unzip \
@@ -21,24 +20,23 @@ RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f soft
   gcc \
   curl \
   xvfb \
-  python \
-  python-pip \
-  python-dev \
+  python3 \
+  python3-dev \
+  python3-pip \
   build-essential \
   libncurses-dev \
   flex \
   bison \
   gperf \
-  python-serial \
   libxrender1 \
   libxtst6 \
   libxi6 \
-  openjdk-8-jre \
   jq \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt
 
+# Get pinned version of Arduino IDE
 RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
  && unxz -q ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
  && tar -xvf arduino-$ARDUINO_VERSION-linux64.tar \
@@ -47,26 +45,28 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && cd ./arduino \
  && ./install.sh
 
+# Get latest ESP32 Arduino framework
 WORKDIR /opt/arduino/hardware/espressif
-
-RUN git clone https://github.com/espressif/arduino-esp32.git esp32
-
+RUN git clone --depth=1 https://github.com/espressif/arduino-esp32.git esp32
 WORKDIR /opt/arduino/hardware/espressif/esp32
 RUN git submodule update --init --recursive \
  && rm -rf ./**/examples/**
 
+# Get ESP32 tools
 WORKDIR /opt/arduino/hardware/espressif/esp32/tools
-RUN python get.py
+RUN python3 --version && python3 get.py
 
+# Get latest ESP8266 Arduino framework
 WORKDIR /opt/arduino/hardware/espressif
-RUN git clone https://github.com/esp8266/Arduino.git esp8266
+RUN git clone --depth=1 https://github.com/esp8266/Arduino.git esp8266
 WORKDIR /opt/arduino/hardware/espressif/esp8266
-RUN git checkout tags/$ARDUINO_ESP_VERSION \
-  && rm -rf ./**/examples/**
+RUN rm -rf ./**/examples/**
 
+# Get ESP8266 tools
 WORKDIR /opt/arduino/hardware/espressif/esp8266/tools
-RUN python get.py
+RUN python3 --version && python3 get.py
 
+# Hardening and optimization: clean apt lists
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Add boards manager URL (warning, mismatch in boardsmanager vs. boards_manager in 2.6.0 coming up)
