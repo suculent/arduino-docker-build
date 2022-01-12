@@ -1,9 +1,9 @@
-FROM ubuntu:xenial
+FROM ubuntu:jammy
 
 ARG GIT_TAG
 
 ENV ARDUINO_VERSION="1.8.19"
-ENV ARDUINO_ESP_VERSION="2.7.4"
+ENV ARDUINO_ESP_VERSION="3.0.2"
 ENV GIT_TAG=${GIT_TAG}
 
 RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends -f software-properties-common \
