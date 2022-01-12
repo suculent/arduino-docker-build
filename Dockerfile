@@ -7,7 +7,7 @@ ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -y -qq update \
-  && apt-get install -qq -y --no-install-recommends -f --allow-change-held-packages -y \
+  && apt-get install -qq -y --no-install-recommends -f --allow-change-held-packages \
   software-properties-common \
   wget \
   zip \
