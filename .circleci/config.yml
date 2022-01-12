@@ -4,7 +4,7 @@ orbs:
 
 jobs:
 
-  deploy-docker-build:
+  deploy:
     executor: docker/docker
     steps:
       - setup_remote_docker
@@ -22,6 +22,16 @@ jobs:
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:latest
 
+  test:
+    executor: docker/docker
+    steps:
+      - setup_remote_docker
+      - checkout
+      - docker/check
+      - docker/build:
+          image: suculent/arduino-docker-build
+          tag: future
+
 #
 # WORKFLOWS
 #
@@ -30,9 +40,14 @@ workflows:
   version: 2
   build:
     jobs:
-      - deploy-docker-build:
+      - test:
           context:
             - dockerhub
+      - deploy:
+          context:
+            - dockerhub
+          requires: 
+              - test
           filters:
             branches:
               only: master
