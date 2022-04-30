@@ -6,6 +6,9 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
+ENV ESP32_VERSION=2.0.2
+ENV ESP8266_VERSION=2.7.4
+
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
   software-properties-common \
@@ -47,24 +50,25 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
 
 # Get latest ESP32 Arduino framework
 WORKDIR /opt/arduino/hardware/espressif
-RUN git clone --depth=1 https://github.com/espressif/arduino-esp32.git esp32
+RUN git clone --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32
 WORKDIR /opt/arduino/hardware/espressif/esp32
 RUN git submodule update --init --recursive \
  && rm -rf ./**/examples/** ./.git
 
 # Get ESP32 tools
 WORKDIR /opt/arduino/hardware/espressif/esp32/tools
-RUN python3 --version && python3 get.py
+RUN ls -la && python3 --version && python3 get.py
 
 # Get latest ESP8266 Arduino framework
 WORKDIR /opt/arduino/hardware/espressif
-RUN git clone --depth=1 https://github.com/esp8266/Arduino.git esp8266
+RUN git clone --branch $ESP8266_VERSION https://github.com/esp8266/Arduino.git esp8266
 WORKDIR /opt/arduino/hardware/espressif/esp8266
-RUN rm -rf ./**/examples/**
+RUN git submodule update --init --recursive \
+ && rm -rf ./.git
 
 # Get ESP8266 tools
 WORKDIR /opt/arduino/hardware/espressif/esp8266/tools
-RUN python3 --version && python3 get.py
+RUN ls -la && python3 --version && python3 get.py
 
 # Hardening and optimization: clean apt lists
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

@@ -4,7 +4,46 @@ orbs:
 
 jobs:
 
-  deploy:
+  deploy8266:
+    executor: docker/docker
+    steps:
+      - setup_remote_docker
+      - checkout
+      - docker/check
+      - docker/build:
+          image: suculent/arduino-docker-build
+          dockerfile: ./Dockerfile.esp8266
+          tag: esp8266
+      - docker/push:
+          digest-path: /tmp/digest.txt
+          image: suculent/arduino-docker-build
+          tag: esp8266
+      - run:
+          command: |
+            echo "Digest is: $(</tmp/digest.txt)"
+            docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:esp8266
+  
+
+  deploy32:
+    executor: docker/docker
+    steps:
+      - setup_remote_docker
+      - checkout
+      - docker/check
+      - docker/build:
+          image: suculent/arduino-docker-build
+          dockerfile: ./Dockerfile.esp32
+          tag: esp32
+      - docker/push:
+          digest-path: /tmp/digest.txt
+          image: suculent/arduino-docker-build
+          tag: esp32
+      - run:
+          command: |
+            echo "Digest is: $(</tmp/digest.txt)"
+            docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:esp32
+  
+  deployFat:
     executor: docker/docker
     steps:
       - setup_remote_docker
@@ -43,7 +82,7 @@ workflows:
       - test:
           context:
             - dockerhub
-      - deploy:
+      - deployFat:
           context:
             - dockerhub
           requires: 
@@ -51,3 +90,19 @@ workflows:
           filters:
             branches:
               only: master
+      - deploy32:
+          context:
+            - dockerhub
+          requires: 
+              - test
+          filters:
+            branches:
+              only: esp32
+      - deploy8266:
+          context:
+            - dockerhub
+          requires: 
+              - test
+          filters:
+            branches:
+              only: esp8266
