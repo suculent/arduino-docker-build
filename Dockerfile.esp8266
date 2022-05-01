@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM debian:bookworm-slim
 
 ARG GIT_TAG
 
@@ -6,10 +6,10 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
-ENV ESP8266_VERSION=2.7.4
+ENV ESP8266_VERSION="2.6.3"
 
-RUN apt -y -qq update && \
-  apt -y -qq --no-install-recommends --allow-change-held-packages install \
+RUN apt-get -y -qq update && \
+  apt-get -y -qq --no-install-recommends --allow-change-held-packages install \
   software-properties-common \
   wget \
   zip \
@@ -34,6 +34,7 @@ RUN apt -y -qq update && \
   libxtst6 \
   libxi6 \
   jq \
+  mc \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt
@@ -45,28 +46,18 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && rm -rf arduino-$ARDUINO_VERSION-linux64.tar \
  && mv ./arduino-$ARDUINO_VERSION ./arduino \
  && cd ./arduino \
- && ./install.sh
-
-# Get latest ESP8266 Arduino framework
-WORKDIR /opt/arduino/hardware/espressif
-RUN git clone --branch $ESP8266_VERSION https://github.com/esp8266/Arduino.git esp8266
-WORKDIR /opt/arduino/hardware/espressif/esp8266
-RUN git submodule update --init --recursive \
- && rm -rf ./.git
-
-# Get ESP8266 tools
-WORKDIR /opt/arduino/hardware/espressif/esp8266/tools
-RUN ls -la && python3 --version && python3 get.py
+ && ./install.sh \
+ && rm -rf /root/.arduino15/packages/esp8266/hardware/esp8266/3.0.2
 
 # Hardening and optimization: clean apt lists
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Add boards manager URL (warning, mismatch in boardsmanager vs. boards_manager in 2.6.0 coming up)
+# Installing the board support package 
 RUN /opt/arduino/arduino \
      --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
      --save-prefs \
   && /opt/arduino/arduino \
-     --install-boards esp8266:esp8266 \
+     --install-boards esp8266:esp8266:${ESP8266_VERSION} \
      --save-prefs
 
 RUN mkdir /opt/workspace
