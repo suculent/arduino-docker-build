@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM debian:bookworm-slim
 
 ARG GIT_TAG
 
@@ -6,7 +6,7 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
-ENV ESP32_VERSION=2.0.2
+ENV ESP32_VERSION="2.0.2"
 
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
@@ -60,14 +60,6 @@ RUN ls -la && python3 --version && python3 get.py
 
 # Hardening and optimization: clean apt lists
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Add boards manager URL (warning, mismatch in boardsmanager vs. boards_manager in 2.6.0 coming up)
-# RUN /opt/arduino/arduino \
-#      --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
-#      --save-prefs \
-#   && /opt/arduino/arduino \
-#      --install-boards esp8266:esp8266 \
-#      --save-prefs
 
 RUN mkdir /opt/workspace
 WORKDIR /opt/workspace

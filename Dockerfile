@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM debian:bookworm-slim
 
 ARG GIT_TAG
 
@@ -7,7 +7,9 @@ ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
 ENV ESP32_VERSION="2.0.2"
-ENV ESP8266_VERSION="2.7.4"
+
+# Arduino installs 3.0.2 by default, we'll delete that and override
+ENV ESP8266_VERSION="2.6.3"
 
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
@@ -40,7 +42,6 @@ RUN apt -y -qq update && \
 WORKDIR /opt
 
 ENV HW_PATH=/root/.arduino15/packages
-# /root/.arduino15/packages/esp8266/hardware/esp8266
 
 # Get pinned version of Arduino IDE
 RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
@@ -50,7 +51,7 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && mv ./arduino-$ARDUINO_VERSION ./arduino \
  && cd ./arduino \
  && ./install.sh \
- && rm -rf ${HW_PATH}/*
+ && rm -rf /root/.arduino15/packages/esp8266/hardware/esp8266/3.0.2
 
 # Get latest ESP32 Arduino framework
 WORKDIR ${HW_PATH}
@@ -63,26 +64,15 @@ RUN pwd && ls -la && git submodule update --init --recursive \
 WORKDIR ${HW_PATH}/esp32/tools
 RUN pwd && ls -la && python3 --version && python3 get.py
 
-# Get latest ESP8266 Arduino framework
-WORKDIR ${HW_PATH}
-RUN ls -la && git clone --depth=1 --branch $ESP8266_VERSION https://github.com/esp8266/Arduino.git esp8266
-WORKDIR ${HW_PATH}/esp8266
-RUN ls -la && git submodule update --init --recursive \
- && rm -rf ./.git
-
-# Get ESP8266 tools
-WORKDIR ${HW_PATH}/esp8266/tools
-RUN ls -la && python3 --version && python3 get.py
-
 # Hardening and optimization: clean apt lists
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Add boards manager URL (warning, mismatch in boardsmanager vs. boards_manager in 2.6.0 coming up)
+# Installing the board support package for ESP8266
 RUN /opt/arduino/arduino \
      --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
      --save-prefs \
   && /opt/arduino/arduino \
-     --install-boards esp8266:esp8266 \
+     --install-boards esp8266:esp8266:${ESP8266_VERSION} \
      --save-prefs
 
 RUN mkdir /opt/workspace
