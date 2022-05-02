@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 
+echo "arduino-docker-build-1.0.160-esp8266:${ESP8266_VERSION}-esp32:${ESP32_VERSION}"
+echo $GIT_TAG
+
 export PATH=$PATH:/opt/arduino/:/opt/arduino/java/bin/
 
 chmod +x /opt/arduino/arduino
+
+# Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
+# - KEY=<value>
+
+cd /opt/workspace
+
+WORKDIR=$(pwd)
 
 parse_yaml() {
     local prefix=$2
@@ -27,18 +37,6 @@ parse_yaml() {
 
 set +e # don't skip errors ("Selected library is not available" on install)
 
-# Config options you may pass via Docker like so 'docker run -e "<option>=<value>"':
-# - KEY=<value>
-
-if [ -z "$WORKDIR" ]; then
-  cd $WORKDIR
-else
-  echo "No custom working directory given, using current..."
-  WORKDIR=$(PWD)
-fi
-
-cd /opt/workspace
-
 #
 # Build
 #
@@ -49,6 +47,7 @@ SOURCE=$(pwd)
 F_CPU=80
 FLASH_SIZE="4M"
 TEST_SCRIPT=0
+CFLAGS=""
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
 
@@ -59,24 +58,33 @@ else
 
   eval $(parse_yaml "$YMLFILE" "")
   BOARD=${arduino_platform}:${arduino_arch}:${arduino_board}
+  echo "- board: ${BOARD}"
 
   if [ ! -z "${arduino_flash_size}" ]; then
     FLASH_SIZE="${arduino_flash_size}"
+    echo "- flash_size: $FLASH_SIZE"
   fi
 
   if [ ! -z "${arduino_f_cpu}" ]; then
     F_CPU="${arduino_f_cpu}"
+    echo "- f_cpu: $F_CPU"
   fi
 
   if [ ! -z "${arduino_source}" ]; then
     SOURCE="${arduino_source}"
+    echo "- source: $SOURCE"
   fi
 
   if [ ! -z "${arduino_test}" ]; then
     TEST_SCRIPT="${arduino_test}"
   fi
 
-  echo "- board: ${BOARD}"
+  # output filename for the per-device environment file
+  if [ ! -z "${environment_target}" ]; then
+    ENVOUT="${WORKDIR}/${environment_target}" # e.g. src/env.h
+    echo "- ENVOUT: ${ENVOUT}"
+  fi
+
   echo "- libs: ${arduino_libs}"
 
   if [[ ! -z ${arduino_flash_ld} ]]; then
@@ -88,10 +96,37 @@ else
     echo "- partitions: ${arduino_partitions} (esp32)"
   fi
 
-  echo "- f_cpu: $F_CPU"
-  echo "- flash_size: $FLASH_SIZE"
-  echo "- source: $SOURCE"
   echo "- test_script: $TEST_SCRIPT"
+fi
+
+# Parse environment.json
+ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
+ENVOUT=$(find /opt/workspace -name "environment.h" | head -n 1)
+
+# echo "Will write to ENVOUT ${ENVOUT}"
+
+if [[ ! -f $ENVFILE ]]; then
+  echo "No environment.json found"
+else
+  echo "Generating per-device environment headers to: ${ENVOUT}"
+  echo
+  # Generate C-header from key-value JSON object
+  arr=()
+  # Print out header, will clear previous contents.
+  echo "Touching file at ${ENVOUT}"
+  touch ${ENVOUT}
+  echo "/* This file is auto-generated. */" > ${ENVOUT}
+  while IFS='' read -r keyname; do
+    arr+=("$keyname")
+    VAL=$(jq '.'$keyname $ENVFILE)
+
+    if [[ ${keyname} == "cflags" ]]; then
+      $CFLAGS+="${VAL}"
+    else 
+      NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
+      echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
+    fi
+  done < <(jq -r 'keys[]' $ENVFILE)
 fi
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
@@ -117,10 +152,14 @@ if [ -z "$DISPLAY" ]; then
   # export DISPLAY=:0.0
 fi
 
+echo "Cleaning libraries..."
+rm -rf /opt/arduino/libraries/**
+
 # Install own libraries (overwriting managed libraries)
 if [ -d "./lib" ]; then
     echo "Copying user libraries..."
     cp -fR ./lib/** /opt/arduino/libraries
+    # cp -fR ./lib8266/** /opt/arduino/libraries # should be ESP8266 only!
 fi
 
 # Use default library if none set in thinx.yml
@@ -136,8 +175,8 @@ for lib in ${arduino_libs}; do
   set -e
 done
 
-echo "Installed libraries:"
-ls -la "/opt/arduino/libraries"
+#echo "Installed libraries:"
+#ls -la "/opt/arduino/libraries"
 
 # before searching INOs, clear mess...
 rm -rf ${SOURCE}/.development
@@ -158,7 +197,7 @@ rm -rf ${SOURCE}/.development
 rm -rf ${SOURCE}/.pioenvs
 rm -rf ${SOURCE}/build/**
 
-echo "==================== TEST PHASE ========================\n"
+echo "-"
 
 if [[ -f $TEST_SCRIPT ]]; then
   echo "Running test script ${TEST_SCRIPT}"
@@ -166,12 +205,10 @@ if [[ -f $TEST_SCRIPT ]]; then
   $( $TEST_SCRIPT )
 else
   echo "No test script defined."
+  echo
 fi
 
-
-echo "==================== TEST PHASE COMPLETED ========================\n"
-
-echo "==================== BUILD PHASE ========================\n"
+echo "-"
 
 # exit on error
 set +e
@@ -190,16 +227,32 @@ else
     FLASH_INSERT="--pref build.flash_ld=$arduino_flash_ld"
   fi
 
-  CMD="/opt/arduino/arduino \
-  --verify \
-  --verbose-build $FLASH_INSERT \
-  --pref build.path=/opt/workspace/build \
-  --pref build.f_cpu=$arduino_f_cpu \
-  --pref build.flash_size=$arduino_flash_size \
-  --pref build.flash_ld=${arduino_flash_ld} \
-  --board $BOARD $INO_FILE"
+  # original implementation without optional cflags (refactor to $CFLAGS_INSERT)
+  if [[ "$CFLAGS" == "" ]]; then
+    echo "Building normally."
+    CMD="/opt/arduino/arduino \
+    --verify \
+    $FLASH_INSERT \
+    --pref build.path=/opt/workspace/build \
+    --pref build.f_cpu=$arduino_f_cpu \
+    --pref build.flash_size=$arduino_flash_size \
+    --pref build.flash_ld=${arduino_flash_ld} \
+    --board $BOARD $INO_FILE"
+  else
+    echo "Building with CFLAGS: ${CFLAGS}"
+    CMD="/opt/arduino/arduino \
+    --verify \
+    $FLASH_INSERT \
+    --pref build.path=/opt/workspace/build \
+    --pref build.f_cpu=$arduino_f_cpu \
+    --pref build.flash_size=$arduino_flash_size \
+    --pref build.flash_ld=${arduino_flash_ld} \
+    --pref compiler.cpp.extra_flags=${CFLAGS} \
+    --board $BOARD $INO_FILE"
+  fi
 
-  echo "Executing Build command: ${CMD}"
+  HR_CMD=$(echo "$CMD" | tr -s ' ')
+  echo "Executing Build command: ${HR_CMD}"
   $CMD
 fi
 
@@ -207,52 +260,54 @@ fi
 # Export artefacts
 #
 
-echo "Seaching for Lint results...\n"
 if [[ -f "../lint.txt" ]]; then
   echo "Lint output:"
   cat "../lint.txt"
   cp -vf "../lint.txt" $BUILD_DIR/lint.txt
 else
-  echo "No lint results found..."
+  echo "No lint results found." #  TODO: Do something with them...
 fi
 
 BUILD_PATH="/opt/workspace/build"
 cd $BUILD_PATH
 
-echo "Listing build artefacts in ${BUILD_PATH}:"
-ls
-
-# TODO: find one would be safer
 BIN_FILE=$(find . -name '*.bin' | head -n 1)
 ELF_FILE=$(find . -name '*.elf' | head -n 1)
+SIG_FILE=$(find . -name '*.signed' | head -n 1)
 
 if [[ ! -z $BIN_FILE ]]; then
-  cp -v $BIN_FILE ../firmare.bin
-  mv -v $BIN_FILE firmware.bin
+  echo $BIN_FILE
+  cp -v $BIN_FILE ../firmware.bin
+  chmod 775 ../firmware.bin
+  mv -v $BIN_FILE ./firmware.bin
+  chmod 775 ./firmware.bin
   RESULT=0
 fi
 
 if [[ ! -z $ELF_FILE ]]; then
-  cp -v $ELF_FILE ../firmare.elf
+  echo $ELF_FILE
   chmod -x $ELF_FILE # security measure because the file gets built with +x and we don't like this
-  mv -v $ELF_FILE firmware.elf
+  cp -v $ELF_FILE ../firmware.elf
+  chmod 775 ../firmware.elf
+  mv -v $ELF_FILE ./firmware.elf
+  chmod 775 ./firmware.elf
 fi
 
-if [[ -f "./build.options.json" ]]; then
-  cat ./build.options.json
-  echo ""
+if [[ ! -z $SIG_FILE ]]; then
+  echo "Exporting signed binary..."
+  echo $SIG_FILE
+  rm -rf firmware.bin
+  rm -rf ../firmware.bin
+  cp -v $SIG_FILE ../firmware.bin
+  chmod 775 ../firmware.bin
+  mv -v $SIG_FILE ./firmware.bin
+  chmod 775 ./firmware.bin
+  RESULT=0
 fi
 
 # Report build status using logfile
 if [[ $RESULT == 0 ]]; then
-  echo "==================== BUILD PHASE SUCCESSFUL ========================"
-else
-  echo "==================== BUILD PHASE FAILED ========================"
-  echo "RESULT: $RESULT"
-fi
-
-# Report build status using logfile
-if [[ $? == 0 ]]; then
+  # Do not touch, or be careful. This phrase is used later in log parsers to catch success state.
   echo "THiNX BUILD SUCCESSFUL."
 else
   echo "THiNX BUILD FAILED: $?"

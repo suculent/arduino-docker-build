@@ -8,9 +8,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ENV ESP32_VERSION="2.0.2"
 
-# Arduino installs 3.0.2 by default, we'll delete that and override
-ENV ESP8266_VERSION="2.6.3"
-
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
   software-properties-common \
@@ -41,8 +38,6 @@ RUN apt -y -qq update && \
 
 WORKDIR /opt
 
-ENV HW_PATH=/root/.arduino15/packages
-
 # Get pinned version of Arduino IDE
 RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
  && unxz -q ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
@@ -50,25 +45,23 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && rm -rf arduino-$ARDUINO_VERSION-linux64.tar \
  && mv ./arduino-$ARDUINO_VERSION ./arduino \
  && cd ./arduino \
- && ./install.sh \
- && rm -rf /root/.arduino15/packages/esp8266/hardware/esp8266/3.0.2 \
- && mkdir -p ${HW_PATH} \
- && cd ${HW_PATH} \
- && advice.detachedHead false \
- && git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32 \
- && cd ${HW_PATH}/esp32 \
- && pwd && ls -la && git submodule update --init --recursive \
- && rm -rf ./**/examples/** ./.git \
- && cd ${HW_PATH}/esp32/tools \
- && python3 get.py \
- && mkdir /opt/workspace \
- && /opt/arduino/arduino \
-    --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
-    --save-prefs \
- && /opt/arduino/arduino \
-     --install-boards esp8266:esp8266:${ESP8266_VERSION} \
-     --save-prefs
+ && ./install.sh
 
+# Get latest ESP32 Arduino framework
+WORKDIR /opt/arduino/hardware/espressif
+RUN git clone --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32
+WORKDIR /opt/arduino/hardware/espressif/esp32
+RUN git submodule update --init --recursive \
+ && rm -rf ./**/examples/** ./.git
+
+# Get ESP32 tools
+WORKDIR /opt/arduino/hardware/espressif/esp32/tools
+RUN ls -la && python3 --version && python3 get.py
+
+# Hardening and optimization: clean apt lists
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN mkdir /opt/workspace
 WORKDIR /opt/workspace
 COPY cmd.sh /opt/
 CMD [ "/opt/cmd.sh" ]

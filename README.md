@@ -5,6 +5,7 @@
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=arduino-docker-build&metric=security_rating)](https://sonarcloud.io/dashboard?id=arduino-docker-build)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsuculent%2Farduino-docker-build.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsuculent%2Farduino-docker-build?ref=badge_shield)
+[![CircleCI](https://circleci.com/gh/suculent/arduino-docker-build/tree/master.svg?style=svg)](https://circleci.com/gh/suculent/arduino-docker-build/tree/master)
 
 Run the [Arduino](http://arduino.cc) command-line builder in a docker container. This image will take it from there and turn your Arduino project into a binary which you then can [flash to the ESP8266/ESP32](http://nodemcu.readthedocs.org/en/dev/en/flash/).
 
@@ -82,6 +83,13 @@ The firmware file is created in the `bin` sub folder of your root directory. You
 You can pass the following optional parameters to the Docker build like so `docker run -e "<parameter>=value" -e ...`.
 
 - `WORKDIR` Just an parametrization example, will deprecate or be used for additional libraries.
+
+#### Environment support
+
+The builder is able to re-create designated environment.h (exact filename should be defined in thinx.yml) from environment.json.
+The environment.h is used to customize variables in project.
+
+In case you need to modify GCC CFLAGS using environment variables, use the `cflags` variable which will be passed to Arduino builder since 0.8.0.
 
 ### Flashing the built binary
 There are several [tools to flash the firmware](http://nodemcu.readthedocs.org/en/dev/en/flash/) to the ESP8266/ESP32. If you were to use [esptool](https://github.com/themadinventor/esptool) (like I do) you'd run:
