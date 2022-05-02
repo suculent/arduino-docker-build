@@ -51,22 +51,21 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && mv ./arduino-$ARDUINO_VERSION ./arduino \
  && cd ./arduino \
  && ./install.sh \
- && rm -rf /root/.arduino15/packages/esp8266/hardware/esp8266/3.0.2
-
-# Get latest ESP32 Arduino framework
-WORKDIR ${HW_PATH}
-RUN git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32 \
-    && cd ${HW_PATH}/esp32 \
-    && pwd && ls -la && git submodule update --init --recursive \
-    && rm -rf ./**/examples/** ./.git \
-    && mkdir ${HW_PATH}/esp32/tools \
-    && cd ${HW_PATH}/esp32/tools \
-    && python3 get.py \
-    && mkdir /opt/workspace \
-    && /opt/arduino/arduino \
-     --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
-     --save-prefs \
-  && /opt/arduino/arduino \
+ && rm -rf /root/.arduino15/packages/esp8266/hardware/esp8266/3.0.2 \
+ && mkdir -p ${HW_PATH} \
+ && cd ${HW_PATH} \
+ && git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32 \
+ && cd ${HW_PATH}/esp32 \
+ && pwd && ls -la && git submodule update --init --recursive \
+ && rm -rf ./**/examples/** ./.git \
+ && mkdir -p ${HW_PATH}/esp32/tools \
+ && cd ${HW_PATH}/esp32/tools \
+ && python3 get.py \
+ && mkdir /opt/workspace \
+ && /opt/arduino/arduino \
+    --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
+    --save-prefs \
+ && /opt/arduino/arduino \
      --install-boards esp8266:esp8266:${ESP8266_VERSION} \
      --save-prefs
 
