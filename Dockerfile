@@ -55,17 +55,14 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
 
 # Get latest ESP32 Arduino framework
 WORKDIR ${HW_PATH}
-RUN git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32
-WORKDIR ${HW_PATH}/esp32
-RUN pwd && ls -la && git submodule update --init --recursive \
- && rm -rf ./**/examples/** ./.git
+RUN git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32 \
+    && cd ${HW_PATH}/esp32 \
+    && pwd && ls -la && git submodule update --init --recursive \
+    && rm -rf ./**/examples/** ./.git
 
 # Get ESP32 tools
 WORKDIR ${HW_PATH}/esp32/tools
 RUN pwd && ls -la && python3 --version && python3 get.py
-
-# Hardening and optimization: clean apt lists
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Installing the board support package for ESP8266
 RUN /opt/arduino/arduino \
