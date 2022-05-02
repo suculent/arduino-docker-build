@@ -54,6 +54,7 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && rm -rf /root/.arduino15/packages/esp8266/hardware/esp8266/3.0.2 \
  && mkdir -p ${HW_PATH} \
  && cd ${HW_PATH} \
+ && git config --global advice.detachedHead false \
  && git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32 \
  && cd ${HW_PATH}/esp32 \
  && pwd && ls -la && git submodule update --init --recursive \
