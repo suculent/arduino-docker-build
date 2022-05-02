@@ -58,21 +58,18 @@ WORKDIR ${HW_PATH}
 RUN git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32 \
     && cd ${HW_PATH}/esp32 \
     && pwd && ls -la && git submodule update --init --recursive \
-    && rm -rf ./**/examples/** ./.git
-
-# Get ESP32 tools
-WORKDIR ${HW_PATH}/esp32/tools
-RUN pwd && ls -la && python3 --version && python3 get.py
-
-# Installing the board support package for ESP8266
-RUN /opt/arduino/arduino \
+    && rm -rf ./**/examples/** ./.git \
+    && mkdir ${HW_PATH}/esp32/tools \
+    && cd ${HW_PATH}/esp32/tools \
+    && python3 get.py \
+    && mkdir /opt/workspace \
+    && /opt/arduino/arduino \
      --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" \
      --save-prefs \
   && /opt/arduino/arduino \
      --install-boards esp8266:esp8266:${ESP8266_VERSION} \
      --save-prefs
 
-RUN mkdir /opt/workspace
 WORKDIR /opt/workspace
 COPY cmd.sh /opt/
 CMD [ "/opt/cmd.sh" ]
