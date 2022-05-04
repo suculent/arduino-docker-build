@@ -16,7 +16,6 @@ RUN apt -y -qq update && \
   software-properties-common \
   wget \
   zip \
-  unzip \
   git \
   make \
   srecord \
