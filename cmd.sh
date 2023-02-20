@@ -210,8 +210,8 @@ fi
 
 echo "-"
 
-# exit on error
-set +e
+#  no exit on error (will be processed later)
+set -e
 
 if [[ ! -z $@ ]]; then
   echo "Running builder..."
