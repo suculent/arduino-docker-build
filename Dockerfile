@@ -8,8 +8,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ENV ESP32_VERSION="2.0.2"
 
-# Arduino installs 3.0.2 by default, we'll delete that and override
-ENV ESP8266_VERSION="2.6.3"
+# Arduino installs something by default, we'll delete that and override
+ENV ESP8266_VERSION="3.1.1"
 
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
