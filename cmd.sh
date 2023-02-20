@@ -46,7 +46,7 @@ set +e # don't skip errors ("Selected library is not available" on install)
 SOURCE=$(pwd)
 F_CPU=80
 FLASH_SIZE="4M"
-TEST_SCRIPT=0
+TEST_SCRIPT="false"
 CFLAGS=""
 
 YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
@@ -199,7 +199,7 @@ rm -rf ${SOURCE}/build/**
 
 echo "-"
 
-if [[ -f $TEST_SCRIPT ]]; then
+if [[ -f "./$TEST_SCRIPT" ]]; then
   echo "Running test script ${TEST_SCRIPT}"
   # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
   $( $TEST_SCRIPT )
