@@ -201,7 +201,7 @@ echo "-"
 
 if [[ -f "./$TEST_SCRIPT" ]]; then
   echo "Running test script ${TEST_SCRIPT}"
-  # TODO ASAP: Manage test errors in order to break build immediately and prevent deploying build that failed tests.
+  # Breaks build in case of failure, as required.
   $( $TEST_SCRIPT )
 else
   echo "No test script defined."
