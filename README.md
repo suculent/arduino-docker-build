@@ -25,7 +25,7 @@ Follow the instructions at [https://docs.docker.com/get-started/](https://docs.d
 
 ### Quick Start
 
-Enter any Arduino project repository root. Builder expects thinx.yml file. To build the project, just run:
+Enter any Arduino project repository root. Builder expects thinx.yml file with build configuration (see Examples in THINX Device API Documentation). To build the project, just run:
 
 ```
   docker run --rm -t -v `pwd`:/opt/workspace suculent/arduino-docker-build
