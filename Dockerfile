@@ -1,4 +1,4 @@
-FROM debian:bullseye-20230208-slim
+FROM debian:bullseye-20241016-slim
 
 ARG GIT_TAG
 
