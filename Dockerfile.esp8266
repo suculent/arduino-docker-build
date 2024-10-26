@@ -6,7 +6,7 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
-ENV ESP8266_VERSION="2.6.3"
+ENV ESP8266_VERSION="3.1.2"
 
 RUN apt-get -y -qq update && \
   apt-get -y -qq --no-install-recommends --allow-change-held-packages install \

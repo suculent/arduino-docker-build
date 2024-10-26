@@ -6,10 +6,10 @@ ENV ARDUINO_VERSION="1.8.19"
 ENV GIT_TAG=${GIT_TAG}
 ENV DEBIAN_FRONTEND=noninteractive
 
-ENV ESP32_VERSION="2.0.2"
+ENV ESP32_VERSION="3.0.7"
 
 # Arduino installs something by default, we'll delete that and override
-ENV ESP8266_VERSION="3.1.1"
+ENV ESP8266_VERSION="3.1.2"
 
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
