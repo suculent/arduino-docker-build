@@ -121,8 +121,12 @@ else
     VAL=$(jq '.'$keyname $ENVFILE)
 
     if [[ ${keyname} == "cflags" ]]; then
-      $CFLAGS+="${VAL}"
-    else 
+      # Append the raw cflags value to CFLAGS (passed later as
+      # --pref compiler.cpp.extra_flags). Use jq -r so the compiler flags are
+      # not wrapped in literal JSON quotes. NOTE: the leading "$" here used to
+      # expand $CFLAGS and run "+=..." as a command, silently dropping cflags.
+      CFLAGS+=$(jq -r '.cflags' "$ENVFILE")
+    else
       NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
       echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
     fi
