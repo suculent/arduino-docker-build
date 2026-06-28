@@ -224,40 +224,37 @@ else
   echo "Running builder..."
   echo "Sketch: $INO_FILE in: $(pwd)"
   echo "Target board: $BOARD"
+  # Build the arduino-builder argv as an array so multi-word values survive as
+  # single arguments. A multi-flag CFLAGS (e.g. "-DDEBUG=1 -DFOO") must reach
+  # arduino as ONE "compiler.cpp.extra_flags=..." token; the previous unquoted
+  # "$CMD" string was word-split and only the first flag landed on the pref.
+  cmd=( /opt/arduino/arduino --verify )
+
   if [[ ${arduino_arch} == "esp32" ]]; then
-    FLASH_INSERT="--pref build.partitions=$arduino_partitions"
+    cmd+=( --pref "build.partitions=$arduino_partitions" )
   fi
   if [[ ${arduino_arch} == "esp8266" ]]; then
-    FLASH_INSERT="--pref build.flash_ld=$arduino_flash_ld"
+    cmd+=( --pref "build.flash_ld=$arduino_flash_ld" )
   fi
 
-  # original implementation without optional cflags (refactor to $CFLAGS_INSERT)
-  if [[ "$CFLAGS" == "" ]]; then
-    echo "Building normally."
-    CMD="/opt/arduino/arduino \
-    --verify \
-    $FLASH_INSERT \
-    --pref build.path=/opt/workspace/build \
-    --pref build.f_cpu=$arduino_f_cpu \
-    --pref build.flash_size=$arduino_flash_size \
-    --pref build.flash_ld=${arduino_flash_ld} \
-    --board $BOARD $INO_FILE"
-  else
+  cmd+=(
+    --pref "build.path=/opt/workspace/build"
+    --pref "build.f_cpu=$arduino_f_cpu"
+    --pref "build.flash_size=$arduino_flash_size"
+    --pref "build.flash_ld=${arduino_flash_ld}"
+  )
+
+  if [[ -n "$CFLAGS" ]]; then
     echo "Building with CFLAGS: ${CFLAGS}"
-    CMD="/opt/arduino/arduino \
-    --verify \
-    $FLASH_INSERT \
-    --pref build.path=/opt/workspace/build \
-    --pref build.f_cpu=$arduino_f_cpu \
-    --pref build.flash_size=$arduino_flash_size \
-    --pref build.flash_ld=${arduino_flash_ld} \
-    --pref compiler.cpp.extra_flags=${CFLAGS} \
-    --board $BOARD $INO_FILE"
+    cmd+=( --pref "compiler.cpp.extra_flags=${CFLAGS}" )
+  else
+    echo "Building normally."
   fi
 
-  HR_CMD=$(echo "$CMD" | tr -s ' ')
-  echo "Executing Build command: ${HR_CMD}"
-  $CMD
+  cmd+=( --board "$BOARD" "$INO_FILE" )
+
+  echo "Executing Build command: ${cmd[*]}"
+  "${cmd[@]}"
 fi
 
 #
