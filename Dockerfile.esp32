@@ -1,4 +1,4 @@
-FROM debian:bookworm-20240926-slim
+FROM debian:13.5-slim
 
 ARG GIT_TAG
 
@@ -10,7 +10,6 @@ ENV ESP32_VERSION="3.0.7"
 
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
-  software-properties-common \
   wget \
   zip \
   git \

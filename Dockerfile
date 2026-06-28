@@ -1,4 +1,4 @@
-FROM debian:bookworm-20250929-slim
+FROM debian:13.5-slim
 
 ARG GIT_TAG
 
@@ -13,7 +13,6 @@ ENV ESP8266_VERSION="3.1.2"
 
 RUN apt -y -qq update && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
-  software-properties-common \
   wget \
   zip \
   git \
