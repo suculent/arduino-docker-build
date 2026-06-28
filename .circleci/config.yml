@@ -2,6 +2,10 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.8.0
 
+# Deploy markers (circleci run release plan/update) make each deploy visible in
+# the project Deploys UI with SUCCESS/FAILED status. See:
+# https://app.circleci.com/settings/project/github/suculent/arduino-docker-build/deploys
+
 jobs:
 
   deploy8266:
@@ -9,6 +13,13 @@ jobs:
     steps:
       - setup_remote_docker
       - checkout
+      - run:
+          name: Plan a deploy
+          command: |
+            circleci run release plan \
+              --environment-name="production" \
+              --component-name="esp8266" \
+              --target-version="$CIRCLE_SHA1"
       - docker/check
       - docker/build:
           image: suculent/arduino-docker-build
@@ -23,15 +34,26 @@ jobs:
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:esp8266
       - run:
-          name: Log deploy marker
-          command: circleci run release log --component-name=esp8266 --environment-name=production --target-version=$CIRCLE_SHA1
-
+          name: Mark deploy SUCCESS
+          command: circleci run release update --status=SUCCESS
+          when: on_success
+      - run:
+          name: Mark deploy FAILED
+          command: circleci run release update --status=FAILED
+          when: on_fail
 
   deploy32:
     executor: docker/docker
     steps:
       - setup_remote_docker
       - checkout
+      - run:
+          name: Plan a deploy
+          command: |
+            circleci run release plan \
+              --environment-name="production" \
+              --component-name="esp32" \
+              --target-version="$CIRCLE_SHA1"
       - docker/check
       - docker/build:
           image: suculent/arduino-docker-build
@@ -46,14 +68,26 @@ jobs:
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:esp32
       - run:
-          name: Log deploy marker
-          command: circleci run release log --component-name=esp32 --environment-name=production --target-version=$CIRCLE_SHA1
+          name: Mark deploy SUCCESS
+          command: circleci run release update --status=SUCCESS
+          when: on_success
+      - run:
+          name: Mark deploy FAILED
+          command: circleci run release update --status=FAILED
+          when: on_fail
 
   deployFat:
     executor: docker/docker
     steps:
       - setup_remote_docker
       - checkout
+      - run:
+          name: Plan a deploy
+          command: |
+            circleci run release plan \
+              --environment-name="production" \
+              --component-name="fat" \
+              --target-version="$CIRCLE_SHA1"
       - docker/check
       - docker/build:
           image: suculent/arduino-docker-build
@@ -67,8 +101,13 @@ jobs:
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:latest
       - run:
-          name: Log deploy marker
-          command: circleci run release log --component-name=fat --environment-name=production --target-version=$CIRCLE_SHA1
+          name: Mark deploy SUCCESS
+          command: circleci run release update --status=SUCCESS
+          when: on_success
+      - run:
+          name: Mark deploy FAILED
+          command: circleci run release update --status=FAILED
+          when: on_fail
 
   test:
     executor: docker/docker
@@ -85,7 +124,7 @@ jobs:
 #
 
 workflows:
-  
+
   build:
     jobs:
       - test:
@@ -94,7 +133,7 @@ workflows:
       - deployFat:
           context:
             - dockerhub
-          requires: 
+          requires:
               - test
           filters:
             branches:
@@ -102,7 +141,7 @@ workflows:
       - deploy32:
           context:
             - dockerhub
-          requires: 
+          requires:
               - test
           filters:
             branches:
@@ -110,7 +149,7 @@ workflows:
       - deploy8266:
           context:
             - dockerhub
-          requires: 
+          requires:
               - test
           filters:
             branches:
