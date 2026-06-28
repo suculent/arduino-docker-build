@@ -22,7 +22,10 @@ jobs:
           command: |
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:esp8266
-  
+      - run:
+          name: Log deploy marker
+          command: circleci run release log --component-name=esp8266 --environment-name=production --target-version=$CIRCLE_SHA1
+
 
   deploy32:
     executor: docker/docker
@@ -42,7 +45,10 @@ jobs:
           command: |
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:esp32
-  
+      - run:
+          name: Log deploy marker
+          command: circleci run release log --component-name=esp32 --environment-name=production --target-version=$CIRCLE_SHA1
+
   deployFat:
     executor: docker/docker
     steps:
@@ -60,6 +66,9 @@ jobs:
           command: |
             echo "Digest is: $(</tmp/digest.txt)"
             docker tag $(</tmp/digest.txt) suculent/arduino-docker-build:latest
+      - run:
+          name: Log deploy marker
+          command: circleci run release log --component-name=fat --environment-name=production --target-version=$CIRCLE_SHA1
 
   test:
     executor: docker/docker
