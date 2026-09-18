@@ -21,6 +21,12 @@ jobs:
               --component-name="esp8266" \
               --target-version="$CIRCLE_SHA1"
       - docker/check
+      # The base image (dhi.io/debian-base) is a Docker Hardened Image. dhi.io
+      # refuses anonymous pulls even for publicly entitled repositories, so the
+      # builder has to authenticate there as well as to Docker Hub. DHI is gated
+      # on Docker Hub accounts, so the same dockerhub-context credentials apply.
+      - docker/check:
+          registry: dhi.io
       - docker/build:
           image: suculent/arduino-docker-build
           dockerfile: ./Dockerfile.esp8266
@@ -55,6 +61,12 @@ jobs:
               --component-name="esp32" \
               --target-version="$CIRCLE_SHA1"
       - docker/check
+      # The base image (dhi.io/debian-base) is a Docker Hardened Image. dhi.io
+      # refuses anonymous pulls even for publicly entitled repositories, so the
+      # builder has to authenticate there as well as to Docker Hub. DHI is gated
+      # on Docker Hub accounts, so the same dockerhub-context credentials apply.
+      - docker/check:
+          registry: dhi.io
       - docker/build:
           image: suculent/arduino-docker-build
           dockerfile: ./Dockerfile.esp32
@@ -89,6 +101,12 @@ jobs:
               --component-name="fat" \
               --target-version="$CIRCLE_SHA1"
       - docker/check
+      # The base image (dhi.io/debian-base) is a Docker Hardened Image. dhi.io
+      # refuses anonymous pulls even for publicly entitled repositories, so the
+      # builder has to authenticate there as well as to Docker Hub. DHI is gated
+      # on Docker Hub accounts, so the same dockerhub-context credentials apply.
+      - docker/check:
+          registry: dhi.io
       - docker/build:
           image: suculent/arduino-docker-build
           tag: latest
@@ -115,6 +133,12 @@ jobs:
       - setup_remote_docker
       - checkout
       - docker/check
+      # The base image (dhi.io/debian-base) is a Docker Hardened Image. dhi.io
+      # refuses anonymous pulls even for publicly entitled repositories, so the
+      # builder has to authenticate there as well as to Docker Hub. DHI is gated
+      # on Docker Hub accounts, so the same dockerhub-context credentials apply.
+      - docker/check:
+          registry: dhi.io
       - docker/build:
           image: suculent/arduino-docker-build
           tag: future

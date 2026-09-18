@@ -1,4 +1,9 @@
-FROM debian:13.5-slim
+# Docker Hardened Image base (CIS-compliant, DHI-maintained Debian 13 "trixie").
+# The `-dev` variant is required, not the bare `:trixie` runtime variant: this
+# image *is* a build toolchain, so it needs apt at build time and gcc/python3/
+# git/Xvfb at run time. The runtime variant ships neither a package manager nor
+# a compiler, so it cannot host (or be produced from) this Dockerfile.
+FROM dhi.io/debian-base:trixie-dev
 
 ARG GIT_TAG
 
@@ -11,8 +16,15 @@ ENV ESP32_VERSION="3.0.7"
 # Arduino installs something by default, we'll delete that and override
 ENV ESP8266_VERSION="3.1.2"
 
+# init-system-helpers has to land before the X11 stack. DHI strips it as part of
+# hardening, but x11-common's postinst still calls update-rc.d, so without it
+# x11-common exits 127 and xvfb plus every libX* package depending on it fails
+# to configure -- which fails the build. cmd.sh runs `Xvfb :99` at runtime, so
+# the X11 stack cannot simply be dropped.
 RUN apt -y -qq update && \
+  apt -y -qq --no-install-recommends install init-system-helpers && \
   apt -y -qq --no-install-recommends --allow-change-held-packages install \
+  ca-certificates \
   wget \
   zip \
   git \

@@ -23,6 +23,24 @@ Run the [Arduino](http://arduino.cc) command-line builder in a docker container.
 ### Install Docker
 Follow the instructions at [https://docs.docker.com/get-started/](https://docs.docker.com/get-started/).
 
+### Building the images
+
+The images are built on [Docker Hardened Images](https://dhi.io)
+(`dhi.io/debian-base:trixie-dev`). `dhi.io` rejects anonymous pulls, so log in once
+with your Docker Hub account before building -- locally or in CI:
+
+```
+docker login dhi.io
+```
+
+Builds target `linux/amd64`:
+
+```
+docker build --platform linux/amd64 -f Dockerfile          -t arduino-docker-build:latest  .
+docker build --platform linux/amd64 -f Dockerfile.esp32    -t arduino-docker-build:esp32   .
+docker build --platform linux/amd64 -f Dockerfile.esp8266  -t arduino-docker-build:esp8266 .
+```
+
 ### Quick Start
 
 Enter any Arduino project repository root. Builder expects thinx.yml file with build configuration (see Examples in THINX Device API Documentation). To build the project, just run:
