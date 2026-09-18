@@ -90,6 +90,37 @@ If the Windows path contains spaces it would have to be wrapped in quotes as usu
 
 In case there is a `lib` folder next to your `.ino` file, it will be copied to the build path from your repository.
 
+#### thinx.yml values differ between ESP32 and ESP8266
+
+`thinx.yml` values are passed through to the Arduino core as-is, and **the two
+cores do not accept the same formats.** A `thinx.yml` written for ESP8266 will
+not build for ESP32 (and vice versa) even though both are "arduino" builds:
+
+| Key | ESP8266 | ESP32 |
+|-------------|--------------------------|-------------------------|
+| `platform`  | `esp8266`                | `espressif`             |
+| `arch`      | `esp8266`                | `esp32`                 |
+| `board`     | e.g. `nodemcuv2`, `d1_mini_pro` | e.g. `esp32` (= "ESP32 Dev Module") |
+| `f_cpu`     | Hz, e.g. `80000000L`     | Hz, e.g. `240000000L`   |
+| `flash_size`| `4M`                     | `4MB`                   |
+| `flash_ld`  | e.g. `eagle.flash.4m1m.ld` | not used              |
+| `partitions`| not used                 | e.g. `default`          |
+
+Things that bite:
+
+- **`flash_size` is spelled differently.** ESP32's `esptool` accepts only
+  `256KB`/`512KB`/`1MB`/`2MB`/`4MB`/`8MB`/`16MB`/`32MB`/`64MB`/`128MB` (plus
+  `2MB-c1`/`4MB-c1`). Passing ESP8266's `4M` fails late, at the `elf2image`
+  step, with `invalid choice: '4M'`.
+- **Board ids are Arduino ids, not PlatformIO ids.** `esp32dev` is a PlatformIO
+  name and is rejected with `Error: esp32dev: Unknown board`; the Arduino id for
+  the same hardware is `esp32`. The ESP32 core defines 310 boards — check
+  `boards.txt` in the image if unsure.
+- **`f_cpu` is in Hz.** A bare `80` is not a valid ESP8266 `f_cpu` and breaks
+  compilation inside the core's timing headers.
+- Omit a key entirely rather than leaving it empty, and the board's own default
+  applies.
+
 #### Output
 The firmware file is created in the `bin` sub folder of your root directory. You will also find a mapfile in the `bin` folder with the same name as the firmware file but with a `.map` ending.
 

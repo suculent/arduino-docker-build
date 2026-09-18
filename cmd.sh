@@ -49,7 +49,19 @@ FLASH_SIZE="4M"
 TEST_SCRIPT="false"
 CFLAGS=""
 
-YMLFILE=$(find /opt/workspace -name "thinx.yml" | head -n 1)
+BUILD_DIR="/opt/workspace/build"
+
+# Arduino copies sketch-adjacent files into <build>/sketch/ with a "#line N ..."
+# directive prepended, so a stale build tree left by a previous run contains an
+# environment.json that is NOT valid JSON. find's traversal returned that copy
+# first, jq then failed with "Invalid numeric literal" and every cflag and
+# environment define was silently dropped on any second build in a workspace.
+# Never discover build inputs inside the build directory.
+find_input() { # $1 = -name pattern
+  find /opt/workspace -path "$BUILD_DIR" -prune -o -name "$1" -print | head -n 1
+}
+
+YMLFILE=$(find_input "thinx.yml")
 
 if [[ ! -f $YMLFILE ]]; then
   echo "No thinx.yml found"
@@ -100,8 +112,8 @@ else
 fi
 
 # Parse environment.json
-ENVFILE=$(find /opt/workspace -name "environment.json" | head -n 1)
-ENVOUT=$(find /opt/workspace -name "environment.h" | head -n 1)
+ENVFILE=$(find_input "environment.json")
+ENVOUT=$(find_input "environment.h")
 
 # echo "Will write to ENVOUT ${ENVOUT}"
 
@@ -136,7 +148,6 @@ fi
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
 rm -rf /opt/arduino/libraries/WiFi
 
-BUILD_DIR="/opt/workspace/build"
 if [[ -d "$BUILD_DIR" ]]; then
   echo "Deleting: "
   ls $BUILD_DIR
@@ -188,7 +199,7 @@ rm -rf ${SOURCE}/lib/**/examples/**
 
 # Locate nearest .ino file and enter its folder of not here
 echo "Searching INO file in: ${SOURCE} from $(pwd)"
-INO_FILE=$(find ${SOURCE} -maxdepth 3 -name '*.ino' ) # todo: search only one
+INO_FILE=$(find ${SOURCE} -maxdepth 3 -path "$BUILD_DIR" -prune -o -name '*.ino' -print ) # todo: search only one
 echo "INO Search Result: $INO_FILE"
 if [[ ! -f $INO_FILE ]]; then
   echo "None or too many INOs found in " $(pwd)
@@ -230,18 +241,33 @@ else
   # "$CMD" string was word-split and only the first flag landed on the pref.
   cmd=( /opt/arduino/arduino --verify )
 
+  # Only override a board default when thinx.yml actually supplies a value.
+  # "--pref build.flash_ld=" (empty) REPLACES the board's own default with the
+  # empty string instead of falling back to it; flash_ld was previously emitted
+  # twice, both times possibly empty.
+  add_pref() { # $1 = pref name, $2 = value
+    if [[ -n "$2" ]]; then cmd+=( --pref "$1=$2" ); fi
+  }
+
   if [[ ${arduino_arch} == "esp32" ]]; then
-    cmd+=( --pref "build.partitions=$arduino_partitions" )
+    add_pref "build.partitions" "$arduino_partitions"
   fi
-  if [[ ${arduino_arch} == "esp8266" ]]; then
-    cmd+=( --pref "build.flash_ld=$arduino_flash_ld" )
-  fi
+
+  add_pref "build.f_cpu" "$arduino_f_cpu"
+  add_pref "build.flash_size" "$arduino_flash_size"
+  add_pref "build.flash_ld" "$arduino_flash_ld"
 
   cmd+=(
     --pref "build.path=/opt/workspace/build"
-    --pref "build.f_cpu=$arduino_f_cpu"
-    --pref "build.flash_size=$arduino_flash_size"
-    --pref "build.flash_ld=${arduino_flash_ld}"
+    # compiler.warning_level MUST be set explicitly. The esp8266 core builds its
+    # warning flags as -c "{compiler.warning_flags}-cppflags", expecting
+    # {compiler.warning_flags} to expand to a GCC @-response-file path
+    # (tools/warnings/none). With no compiler.warning_level in preferences.txt the
+    # IDE expands it to the empty string, leaving a literal "-cppflags" on the
+    # command line, and EVERY esp8266 build dies with:
+    #   xtensa-lx106-elf-g++: error: unrecognized command-line option '-cppflags'
+    # "none" matches the core's own default (platform.txt: warnings/none).
+    --pref "compiler.warning_level=none"
   )
 
   if [[ -n "$CFLAGS" ]]; then
@@ -272,7 +298,15 @@ fi
 BUILD_PATH="/opt/workspace/build"
 cd $BUILD_PATH
 
-BIN_FILE=$(find . -name '*.bin' | head -n 1)
+# The esp32 core emits several .bin artefacts beside the application image:
+# <sketch>.bootloader.bin, <sketch>.partitions.bin and <sketch>.merged.bin.
+# find's traversal order is arbitrary, so this used to export whichever came
+# first -- in practice the 3 kB partition table -- as firmware.bin for every
+# esp32 build, leaving the real application image behind. esp8266 emits only
+# one .bin, so it happened to work there. Exclude the non-application artefacts.
+BIN_FILE=$(find . -name '*.bin' \
+  ! -name '*.bootloader.bin' ! -name '*.partitions.bin' ! -name '*.merged.bin' \
+  | head -n 1)
 ELF_FILE=$(find . -name '*.elf' | head -n 1)
 SIG_FILE=$(find . -name '*.signed' | head -n 1)
 

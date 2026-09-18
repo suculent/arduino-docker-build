@@ -38,6 +38,7 @@ RUN apt -y -qq update && \
   python3 \
   python3-dev \
   python3-pip \
+  python3-serial \
   build-essential \
   libncurses-dev \
   flex \
@@ -51,7 +52,14 @@ RUN apt -y -qq update && \
 
 WORKDIR /opt
 
-ENV HW_PATH=/root/.arduino15/packages
+# Manually-installed cores live in the IDE's own hardware dir, laid out as
+# <hardware>/<packager>/<arch>/. This yields the FQBN "espressif:esp32:<board>",
+# matching Dockerfile.esp32 so one thinx.yml works on both images.
+# NOTE: cloning straight into /root/.arduino15/packages/esp32 (as this file did
+# until now) is NOT a layout Arduino 1.8.x recognises -- the board-manager tree
+# requires packages/<packager>/hardware/<arch>/<version>/ -- and every esp32
+# build failed with "Error: esp32: Unknown package".
+ENV HW_PATH=/opt/arduino/hardware/espressif
 
 # Get pinned version of Arduino IDE
 RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \

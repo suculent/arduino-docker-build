@@ -61,28 +61,72 @@ docker build --no-cache --progress=plain --platform linux/amd64 \
 When upgrading the Debian base, capture a baseline log on the OLD image first, then
 diff against the new one — apt package availability is the usual breakage point.
 
-### Pre-existing runtime failures — do NOT mistake these for your regression
+### Long-standing build failures (fixed — keep them fixed)
 
 `docker build` succeeding does **not** mean the image can compile a sketch. Both
-targets currently fail at *runtime*, and both reproduce identically in the
+targets used to fail at *runtime*, and both reproduced identically in the
 published `suculent/arduino-docker-build:latest` (Debian 12 bookworm), so they
-predate the trixie and DHI migrations:
+predated the trixie and DHI migrations. Always smoke-test an actual sketch, not
+just the build.
 
-- **esp8266 — every** build fails with
+- **esp8266: every build failed** with
   `xtensa-lx106-elf-g++: error: unrecognized command-line option '-cppflags'`.
-  Origin is the esp8266 core's `platform.txt:90`, where
-  `-c "{compiler.warning_flags}-cppflags"` is meant to expand to a GCC `@`-response
-  file (`tools/warnings/none-cppflags`) but `{compiler.warning_flags}` expands
-  empty, leaving the literal `-cppflags`. Note the core ships `default-*`,
-  `more-*` and `extra-*` response files but **no `none-*`**, while
-  `platform.txt:25` defaults to `.../warnings/none`. Unrelated to `cflags`:
-  it fails with an `environment.json` that has no `cflags` key at all.
-- **esp32** fails with `Error: esp32: Unknown package`. The Fat Dockerfile clones
-  arduino-esp32 straight into `/root/.arduino15/packages/esp32/`, but Arduino 1.8.x
-  requires `/root/.arduino15/packages/esp32/hardware/esp32/<version>/`.
+  The core's `platform.txt:90` sets
+  `compiler.cpp.flags=-c "{compiler.warning_flags}-cppflags" ...`, expecting
+  `{compiler.warning_flags}` to expand to a GCC `@`-response-file path
+  (`tools/warnings/none`, which *does* ship — along with `default-*`, `more-*`
+  and `extra-*`). But `preferences.txt` carries **no `compiler.warning_level`
+  key**, so the IDE expands the placeholder to the empty string and leaves a
+  literal `-cppflags` on the command line. `compiler.c.flags:79` and
+  `compiler.c.elf.flags:84` have the same construct.
+  **Fix:** `cmd.sh` passes `--pref compiler.warning_level=none` (matching the
+  core's own default). Do not drop it.
 
-When validating a base-image change, compare against the *old image's* behaviour
-rather than against "a build should succeed" — run the same workspace through both.
+- **esp32: every build failed** with `Error: esp32: Unknown package`, because the
+  Fat `Dockerfile` cloned arduino-esp32 straight into
+  `/root/.arduino15/packages/esp32/`. That is not a layout Arduino 1.8.x
+  recognises: the board-manager tree needs
+  `packages/<packager>/hardware/<arch>/<version>/`.
+  **Fix:** the Fat image now installs the core the same way `Dockerfile.esp32`
+  does — into `/opt/arduino/hardware/espressif/esp32` (`HW_PATH`) — so both
+  images expose the **same FQBN, `espressif:esp32:<board>`**, and one thinx.yml
+  works on either.
+  If you ever need the board-manager FQBN `esp32:esp32:<board>` instead, the
+  other working layout is `packages/esp32/hardware/esp32/${ESP32_VERSION}/`;
+  both resolve, but don't let the two images disagree.
+  Fixing the layout exposed a second, separate esp32 blocker: **`python3-serial`
+  (pyserial) is required**. A manual/git core install ships esptool as a Python
+  package whose loader does `import serial` (the Board Manager build bundles a
+  binary instead), so `elf2image` died with `ModuleNotFoundError: No module
+  named 'serial'`. It is now in the apt list of `Dockerfile` and
+  `Dockerfile.esp32` — the two that carry the esp32 core. `Dockerfile.esp8266`
+  does not need it.
+
+  Note esp32 and esp8266 do **not** share `thinx.yml` value formats: esp32's
+  esptool wants `flash_size: "4MB"` where esp8266 wants `"4M"`, and the Arduino
+  board id is `esp32` ("ESP32 Dev Module") — `esp32dev` is a PlatformIO name and
+  is rejected as `Unknown board`.
+
+- **cflags and all environment defines were silently dropped on any second build
+  in the same workspace.** Arduino copies sketch-adjacent files into
+  `<build>/sketch/` with a `#line N "..."` directive prepended, so a stale build
+  tree contains an `environment.json` that is *not* valid JSON. `find`'s
+  traversal returned that copy first and `jq` died with
+  `parse error: Invalid numeric literal at line 1, column 6` — non-fatal, so the
+  build continued with no `compiler.cpp.extra_flags` at all. The `build/` cleanup
+  ran *after* this discovery, so it could not help.
+  **Fix:** `cmd.sh` discovers inputs through `find_input()`, which prunes
+  `$BUILD_DIR`. Use it for anything looked up under `/opt/workspace`.
+
+- **Empty prefs clobbered board defaults.** `cmd.sh` emitted
+  `--pref build.flash_ld=` (twice) and empty `build.f_cpu` / `build.flash_size`
+  when `thinx.yml` omitted them, replacing the board's own default with an empty
+  string rather than falling back to it.
+  **Fix:** `add_pref()` only appends a pref when the value is non-empty.
+  Note `F_CPU=80` / `FLASH_SIZE="4M"` near the top of `cmd.sh` are **logging
+  only** — the argv reads `$arduino_f_cpu` / `$arduino_flash_size` directly.
+  Don't "fix" them by wiring them in: `80` is not a valid esp8266 `f_cpu`
+  (it wants Hz, e.g. `80000000L`), so the board default is the safer fallback.
 
 ### Base image: Docker Hardened Images (DHI)
 
