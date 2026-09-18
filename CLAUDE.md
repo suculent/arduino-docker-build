@@ -26,17 +26,26 @@ via branch filters. There is **one Dockerfile per image, but one branch per depl
 | `deploy32`   | `esp32`            | `Dockerfile.esp32`   |
 | `deploy8266` | `esp8266`          | `Dockerfile.esp8266` |
 
-The `test` job runs on every branch and is a prerequisite. It builds `Dockerfile`
-(the Fat image) and then runs the **build-chain tests** in `tests/` against it:
-`docker run <image> /opt/tests/build-esp8266.sh` and `.../build-esp32.sh`, each
-of which drives the real entrypoint over a dummy project and asserts a plausible
-`firmware.bin`. A green `docker build` is not enough on its own — see
-"Long-standing build failures" below for what shipped green when it was.
+**Every branch builds exactly one image, and every deploy job verifies the image
+it is about to push.** Each of the three deploy jobs runs
+`docker/build` → **build-chain test** → `docker/push`, so nothing reaches Docker
+Hub without compiling a real sketch first. The `test` job is only the gate for
+branches that do *not* deploy (it `ignore`s `master`, `test`, `esp32`,
+`esp8266`); it builds the Fat image and runs the same tests. The deploy jobs
+deliberately do **not** `requires: test` — that would rebuild a Dockerfile a
+second time for no extra coverage (master used to build the ~6 GB Fat image
+twice per pipeline, and esp32/esp8266 built a Fat image they never ship).
 
-Because `test` builds the *Fat* Dockerfile on every branch, it does not cover
-`Dockerfile.esp32` / `Dockerfile.esp8266`; `deploy32` and `deploy8266` therefore
-run the matching build-chain test on their own image after building it and
-**before pushing**. `deployFat` relies on `test`, which built identical content.
+The build-chain tests live in `tests/` and are baked into every image at
+`/opt/tests`. They drive the real entrypoint over a dummy project and assert a
+plausible `firmware.bin`; a green `docker build` is not enough on its own — see
+"Long-standing build failures" below for what shipped green when it was.
+`tests/negative-cflags.sh` is the guard-the-guard: it rebuilds with `cflags`
+removed and **requires the build to fail**, so the cflags assertions cannot
+silently stop asserting anything. It needs the esp8266 core, so it runs
+everywhere except `deploy32`.
+
+Locally: `./tests/run-all-local.sh <image> [targets...]`.
 
 Consequences:
 - **Pushing to `master` alone only redeploys the Fat image.** To ship esp32/esp8266

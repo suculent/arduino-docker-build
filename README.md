@@ -63,8 +63,17 @@ docker run --rm arduino-docker-build:latest /opt/tests/build-esp8266.sh
 Each target is built **twice** in the same workspace so that a leftover `build/`
 directory cannot silently change the result, and the dummy sketch deliberately
 fails to compile if the `cflags` from its `environment.json` do not reach the
-compiler. CI runs the same scripts, and `Dockerfile.esp32` / `Dockerfile.esp8266`
-are verified this way before they are pushed.
+compiler.
+
+There is also a negative test, which rebuilds with `cflags` removed and requires
+the build to **fail** — without it, the cflags guards could stop working and the
+positive tests would keep passing while asserting nothing:
+
+```
+docker run --rm arduino-docker-build:latest /opt/tests/negative-cflags.sh
+```
+
+CI runs all of these, and every image is verified this way before it is pushed.
 
 ### Quick Start
 

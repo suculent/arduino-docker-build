@@ -20,6 +20,14 @@ commands:
       targets:
         type: string
         description: Space-separated targets to exercise, e.g. "esp8266 esp32".
+      negative:
+        type: boolean
+        default: false
+        description: |
+          Also run the guard-the-guard test, which rebuilds with cflags removed
+          and requires the build to FAIL. Without it, the cflags assertions in
+          the positive tests could silently stop asserting anything. Needs an
+          image carrying the esp8266 core.
     steps:
       - run:
           name: Build-chain test (<< parameters.targets >>)
@@ -29,6 +37,14 @@ commands:
               echo "=== build-chain test: $t ==="
               docker run --rm "<< parameters.image >>" "/opt/tests/build-${t}.sh"
             done
+      - when:
+          condition: << parameters.negative >>
+          steps:
+            - run:
+                name: Negative test (the guards must be able to fail)
+                no_output_timeout: 30m
+                command: |
+                  docker run --rm "<< parameters.image >>" /opt/tests/negative-cflags.sh
 
 # Deploy markers (circleci run release plan/update) make each deploy visible in
 # the project Deploys UI with SUCCESS/FAILED status. See:
@@ -59,11 +75,12 @@ jobs:
           image: suculent/arduino-docker-build
           dockerfile: ./Dockerfile.esp8266
           tag: esp8266
-      # The test job builds ./Dockerfile (the Fat image), not this one, so this
-      # image is verified here -- before it is pushed.
+      # Verify the exact image about to be published. `test` does not run on
+      # this branch, and builds a different Dockerfile anyway.
       - build-chain-test:
           image: suculent/arduino-docker-build:esp8266
           targets: "esp8266"
+          negative: true
       - docker/push:
           digest-path: /tmp/digest.txt
           image: suculent/arduino-docker-build
@@ -104,8 +121,8 @@ jobs:
           image: suculent/arduino-docker-build
           dockerfile: ./Dockerfile.esp32
           tag: esp32
-      # The test job builds ./Dockerfile (the Fat image), not this one, so this
-      # image is verified here -- before it is pushed.
+      # Verify the exact image about to be published. `test` does not run on
+      # this branch, and builds a different Dockerfile anyway.
       - build-chain-test:
           image: suculent/arduino-docker-build:esp32
           targets: "esp32"
@@ -148,6 +165,13 @@ jobs:
       - docker/build:
           image: suculent/arduino-docker-build
           tag: latest
+      # Verify the exact image about to be published. `test` no longer runs on
+      # this branch (it would rebuild the same Dockerfile a second time), so
+      # this is the gate.
+      - build-chain-test:
+          image: suculent/arduino-docker-build:latest
+          targets: "esp8266 esp32"
+          negative: true
       - docker/push:
           digest-path: /tmp/digest.txt
           image: suculent/arduino-docker-build
@@ -183,6 +207,7 @@ jobs:
       - build-chain-test:
           image: suculent/arduino-docker-build:future
           targets: "esp8266 esp32"
+          negative: true
 
 #
 # WORKFLOWS
@@ -192,30 +217,40 @@ workflows:
 
   build:
     jobs:
+      # Gate for branches that do not deploy.
+      #
+      # Each deploy job below builds, build-chain-tests and pushes ONE image, so
+      # running `test` alongside them only rebuilt a Dockerfile a second time for
+      # no extra coverage: on master the ~6 GB Fat image was built twice per
+      # pipeline, and on esp32/esp8266 `test` built the Fat image those branches
+      # do not even ship. The deploy jobs no longer `requires: test` for the same
+      # reason -- each one now verifies the exact image it is about to push,
+      # which is a stronger guarantee than gating on a separately built one.
       - test:
           context:
             - dockerhub
+          filters:
+            branches:
+              ignore:
+                - master
+                - test
+                - esp32
+                - esp8266
       - deployFat:
           context:
             - dockerhub
-          requires:
-              - test
           filters:
             branches:
               only: master, test
       - deploy32:
           context:
             - dockerhub
-          requires:
-              - test
           filters:
             branches:
               only: esp32
       - deploy8266:
           context:
             - dockerhub
-          requires:
-              - test
           filters:
             branches:
               only: esp8266
