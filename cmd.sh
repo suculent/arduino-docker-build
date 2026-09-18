@@ -271,8 +271,24 @@ else
   )
 
   if [[ -n "$CFLAGS" ]]; then
+    # compiler.cpp.extra_flags is NOT a free user slot on every core, and --pref
+    # REPLACES it rather than appending. The esp32 core defaults it to "-MMD -c"
+    # and puts it first in recipe.cpp.o.pattern, so overwriting it drops the -c:
+    # g++ then tries to LINK each translation unit and the build dies with
+    # "undefined reference to `main'". esp8266 leaves it empty, which is why
+    # this only ever bit esp32. Read the core's own default out of its
+    # platform.txt and keep it in front of our flags.
+    CORE_EXTRA=""
+    PLATFORM_TXT=$(find /opt/arduino/hardware /root/.arduino15/packages \
+      -name platform.txt -path "*${arduino_arch}*" 2>/dev/null | head -n 1)
+    if [[ -f "$PLATFORM_TXT" ]]; then
+      CORE_EXTRA=$(sed -n 's/^compiler\.cpp\.extra_flags=//p' "$PLATFORM_TXT" | head -n 1)
+      echo "Core default compiler.cpp.extra_flags (${PLATFORM_TXT}): '${CORE_EXTRA}'"
+    else
+      echo "WARNING: no platform.txt found for arch '${arduino_arch}'; cflags may drop core defaults"
+    fi
     echo "Building with CFLAGS: ${CFLAGS}"
-    cmd+=( --pref "compiler.cpp.extra_flags=${CFLAGS}" )
+    cmd+=( --pref "compiler.cpp.extra_flags=${CORE_EXTRA:+${CORE_EXTRA} }${CFLAGS}" )
   else
     echo "Building normally."
   fi
