@@ -41,6 +41,31 @@ docker build --platform linux/amd64 -f Dockerfile.esp32    -t arduino-docker-bui
 docker build --platform linux/amd64 -f Dockerfile.esp8266  -t arduino-docker-build:esp8266 .
 ```
 
+### Testing the images
+
+A successful `docker build` does not mean the image can compile anything, so
+each image carries a build-chain test in `/opt/tests`. It drives the real
+entrypoint over a dummy project and checks that a plausible `firmware.bin`
+comes out:
+
+```
+./tests/run-all-local.sh arduino-docker-build:latest  esp8266 esp32
+./tests/run-all-local.sh arduino-docker-build:esp32   esp32
+./tests/run-all-local.sh arduino-docker-build:esp8266 esp8266
+```
+
+or directly against an image:
+
+```
+docker run --rm arduino-docker-build:latest /opt/tests/build-esp8266.sh
+```
+
+Each target is built **twice** in the same workspace so that a leftover `build/`
+directory cannot silently change the result, and the dummy sketch deliberately
+fails to compile if the `cflags` from its `environment.json` do not reach the
+compiler. CI runs the same scripts, and `Dockerfile.esp32` / `Dockerfile.esp8266`
+are verified this way before they are pushed.
+
 ### Quick Start
 
 Enter any Arduino project repository root. Builder expects thinx.yml file with build configuration (see Examples in THINX Device API Documentation). To build the project, just run:

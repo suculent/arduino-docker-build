@@ -89,4 +89,10 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
 
 WORKDIR /opt/workspace
 COPY cmd.sh /opt/
+
+# Build-chain tests. CI runs these against the built image before pushing it:
+# a green "docker build" does not prove the image can compile a sketch.
+COPY tests /opt/tests
+RUN chmod +x /opt/tests/*.sh
+
 CMD [ "/opt/cmd.sh" ]

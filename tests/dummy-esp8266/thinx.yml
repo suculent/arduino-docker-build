@@ -1,0 +1,9 @@
+# Build-chain test project (ESP8266). Mirrors the documented ESP8266 value
+# formats -- note flash_size "4M" and f_cpu in Hz; ESP32 differs (see README).
+arduino:
+  platform: "esp8266"
+  arch: "esp8266"
+  board: "nodemcuv2"
+  flash_ld: "eagle.flash.4m1m.ld"
+  f_cpu: "80000000L"
+  flash_size: "4M"

@@ -2,6 +2,34 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.8.0
 
+commands:
+
+  build-chain-test:
+    description: |
+      Run the real entrypoint (cmd.sh) against a dummy project inside a freshly
+      built image and assert a plausible application image comes out.
+
+      A green `docker build` does not prove the image can compile a sketch --
+      six defects once shipped green exactly that way, including one where the
+      build reported SUCCESS while exporting the 3 kB esp32 partition table as
+      firmware.bin. See tests/build-target.sh.
+    parameters:
+      image:
+        type: string
+        description: Image (with tag) to test, as just built by docker/build.
+      targets:
+        type: string
+        description: Space-separated targets to exercise, e.g. "esp8266 esp32".
+    steps:
+      - run:
+          name: Build-chain test (<< parameters.targets >>)
+          no_output_timeout: 30m
+          command: |
+            for t in << parameters.targets >>; do
+              echo "=== build-chain test: $t ==="
+              docker run --rm "<< parameters.image >>" "/opt/tests/build-${t}.sh"
+            done
+
 # Deploy markers (circleci run release plan/update) make each deploy visible in
 # the project Deploys UI with SUCCESS/FAILED status. See:
 # https://app.circleci.com/settings/project/github/suculent/arduino-docker-build/deploys
@@ -31,6 +59,11 @@ jobs:
           image: suculent/arduino-docker-build
           dockerfile: ./Dockerfile.esp8266
           tag: esp8266
+      # The test job builds ./Dockerfile (the Fat image), not this one, so this
+      # image is verified here -- before it is pushed.
+      - build-chain-test:
+          image: suculent/arduino-docker-build:esp8266
+          targets: "esp8266"
       - docker/push:
           digest-path: /tmp/digest.txt
           image: suculent/arduino-docker-build
@@ -71,6 +104,11 @@ jobs:
           image: suculent/arduino-docker-build
           dockerfile: ./Dockerfile.esp32
           tag: esp32
+      # The test job builds ./Dockerfile (the Fat image), not this one, so this
+      # image is verified here -- before it is pushed.
+      - build-chain-test:
+          image: suculent/arduino-docker-build:esp32
+          targets: "esp32"
       - docker/push:
           digest-path: /tmp/digest.txt
           image: suculent/arduino-docker-build
@@ -142,6 +180,9 @@ jobs:
       - docker/build:
           image: suculent/arduino-docker-build
           tag: future
+      - build-chain-test:
+          image: suculent/arduino-docker-build:future
+          targets: "esp8266 esp32"
 
 #
 # WORKFLOWS

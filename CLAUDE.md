@@ -26,8 +26,17 @@ via branch filters. There is **one Dockerfile per image, but one branch per depl
 | `deploy32`   | `esp32`            | `Dockerfile.esp32`   |
 | `deploy8266` | `esp8266`          | `Dockerfile.esp8266` |
 
-The `test` job runs on every branch and is a prerequisite; "test" here just means
-**`docker build` succeeds** — there are no unit tests.
+The `test` job runs on every branch and is a prerequisite. It builds `Dockerfile`
+(the Fat image) and then runs the **build-chain tests** in `tests/` against it:
+`docker run <image> /opt/tests/build-esp8266.sh` and `.../build-esp32.sh`, each
+of which drives the real entrypoint over a dummy project and asserts a plausible
+`firmware.bin`. A green `docker build` is not enough on its own — see
+"Long-standing build failures" below for what shipped green when it was.
+
+Because `test` builds the *Fat* Dockerfile on every branch, it does not cover
+`Dockerfile.esp32` / `Dockerfile.esp8266`; `deploy32` and `deploy8266` therefore
+run the matching build-chain test on their own image after building it and
+**before pushing**. `deployFat` relies on `test`, which built identical content.
 
 Consequences:
 - **Pushing to `master` alone only redeploys the Fat image.** To ship esp32/esp8266

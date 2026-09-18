@@ -1,0 +1,10 @@
+# Build-chain test project (ESP32). Note the value formats that differ from
+# ESP8266: platform "espressif", flash_size "4MB" (not "4M"), Arduino board id
+# "esp32" (not the PlatformIO name "esp32dev"). See README.
+arduino:
+  platform: "espressif"
+  arch: "esp32"
+  board: "esp32"
+  f_cpu: "240000000L"
+  flash_size: "4MB"
+  partitions: "default"

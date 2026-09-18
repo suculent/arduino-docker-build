@@ -1,0 +1,4 @@
+{
+  "ssid": "thinx-build-chain-test",
+  "cflags": "-DTHINX_SMOKE_CFLAG=1 -DTHINX_SMOKE_CFLAG2=2"
+}
