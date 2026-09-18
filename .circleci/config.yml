@@ -241,7 +241,13 @@ workflows:
             - dockerhub
           filters:
             branches:
-              only: master, test
+              # MUST be a YAML list. "only: master, test" is a single scalar,
+              # which CircleCI matches as one literal branch name -- it matched
+              # nothing, so deployFat never ran and :latest was never published
+              # by CI. The single-value filters on deploy32/deploy8266 were fine.
+              only:
+                - master
+                - test
       - deploy32:
           context:
             - dockerhub
