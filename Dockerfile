@@ -63,6 +63,7 @@ ENV HW_PATH=/opt/arduino/hardware/espressif
 
 # Get pinned version of Arduino IDE
 RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
+ && echo "eb68bddc1d1c0120be2fca1350a03ee34531cf37f51847b21210b6e70545bc9b  ./arduino-$ARDUINO_VERSION-linux64.tar.xz" | sha256sum -c --strict - \
  && unxz -q ./arduino-$ARDUINO_VERSION-linux64.tar.xz \
  && tar -xvf arduino-$ARDUINO_VERSION-linux64.tar \
  && rm -rf arduino-$ARDUINO_VERSION-linux64.tar \
