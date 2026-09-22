@@ -1,3 +1,53 @@
+# Stage 1: rebuild arduino-builder with a current Go toolchain.
+#
+# The Arduino IDE tarball installed below ships arduino-builder linked against
+# go1.14.4 -- that is the vulnerable `stdlib` image scanners report for this
+# image. The Go runtime is baked into the binary, so no apt package and no base
+# bump can move it; the only fix is to re-link the same upstream source.
+#
+# ARDUINO_BUILDER_REF is the commit IDE 1.8.19 was cut from: the last one that
+# still pins arduino-cli v0.0.0-20210514123546, which is what the bundled
+# binary's build info records. Later commits pull a 2022 arduino-cli whose
+# sketch loader insists the .ino be named after its directory -- cmd.sh builds
+# /opt/workspace/<anything>.ino, so those die with "main file missing from
+# sketch" instead of compiling.
+#
+# The go.zipexe replace is not cosmetic: v1.0.0 nil-derefs in debug/elf while
+# scanning a binary produced by a modern Go linker, so go.rice panics in init()
+# and arduino-builder dies before it sees the sketch. v1.0.2 handles it.
+FROM golang:1.25.13 AS arduino-builder-src
+
+ARG ARDUINO_BUILDER_REF=99ac98e524bd96c4f891a255415e633205ecdbb5
+
+RUN git clone -q https://github.com/arduino/arduino-builder /src \
+ && cd /src \
+ && git checkout -q ${ARDUINO_BUILDER_REF} \
+ && go mod edit -replace github.com/daaku/go.zipexe=github.com/daaku/go.zipexe@v1.0.2 \
+ && GOFLAGS=-mod=mod go mod tidy \
+ && CGO_ENABLED=0 go build -trimpath -o /out/arduino-builder . \
+ && /out/arduino-builder -version
+
+# Stage 2: replace the JRE bundled with the IDE.
+#
+# Arduino 1.8.19 bundles Oracle JRE 1.8.0_191 (release file says
+# BUILD_TYPE="commercial") under /opt/arduino/java, and cmd.sh runs the IDE
+# itself (`/opt/arduino/arduino --verify`, `--install-library`), so the JRE
+# cannot simply be dropped. Debian trixie ships no openjdk-8 at all (21 and 25
+# only) and Oracle's own 8u461 is licence-gated, so the redistributable
+# equivalent is Temurin 8u462 -- same 2025 CPU level, openjdk build.
+FROM dhi.io/debian-base:trixie-dev AS jre
+
+ARG JRE_URL=https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jre_x64_linux_hotspot_8u462b08.tar.gz
+ARG JRE_SHA256=6e83ffc37da053352ccaa2fd3bd7d813b9674d87aa01b35ac3e54903cd33b0d8
+
+RUN apt-get -y -qq update \
+ && apt-get -y -qq --no-install-recommends install ca-certificates curl \
+ && curl -fsSL -o /tmp/jre.tar.gz "${JRE_URL}" \
+ && echo "${JRE_SHA256}  /tmp/jre.tar.gz" | sha256sum -c - \
+ && mkdir -p /out/java \
+ && tar -xzf /tmp/jre.tar.gz -C /out/java --strip-components=1 \
+ && /out/java/bin/java -version
+
 # Docker Hardened Image base (CIS-compliant, DHI-maintained Debian 13 "trixie").
 # The `-dev` variant is required, not the bare `:trixie` runtime variant: this
 # image *is* a build toolchain, so it needs apt at build time and gcc/python3/
@@ -69,6 +119,14 @@ RUN /opt/arduino/arduino \
   && /opt/arduino/arduino \
      --install-boards esp8266:esp8266:${ESP8266_VERSION} \
      --save-prefs
+
+# Swap in the two rebuilt prebuilts. Both arrive inside the Arduino tarball and
+# both are what this image gets flagged for; the tests below are what proves the
+# swap did not change how a sketch compiles.
+COPY --from=arduino-builder-src /out/arduino-builder /opt/arduino/arduino-builder
+RUN rm -rf /opt/arduino/java
+COPY --from=jre /out/java /opt/arduino/java
+RUN /opt/arduino/arduino-builder -version && /opt/arduino/java/bin/java -version
 
 RUN mkdir /opt/workspace
 WORKDIR /opt/workspace
