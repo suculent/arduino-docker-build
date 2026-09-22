@@ -15,7 +15,7 @@
 # The go.zipexe replace is not cosmetic: v1.0.0 nil-derefs in debug/elf while
 # scanning a binary produced by a modern Go linker, so go.rice panics in init()
 # and arduino-builder dies before it sees the sketch. v1.0.2 handles it.
-FROM golang:1.25.13 AS arduino-builder-src
+FROM golang:1.27.1 AS arduino-builder-src
 
 ARG ARDUINO_BUILDER_REF=99ac98e524bd96c4f891a255415e633205ecdbb5
 
