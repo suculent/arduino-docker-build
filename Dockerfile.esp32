@@ -108,9 +108,15 @@ RUN curl https://downloads.arduino.cc/arduino-$ARDUINO_VERSION-linux64.tar.xz > 
  && cd ./arduino \
  && ./install.sh
 
-# Get latest ESP32 Arduino framework
+# Get latest ESP32 Arduino framework.
+#
+# --depth=1, as in the Fat Dockerfile: the full history of arduino-esp32 is a
+# large fetch that buys nothing here -- the tree is pinned to one tag and its
+# .git is deleted two lines below. Unshallowed, this step failed repeatedly
+# with `fetch-pack: unexpected disconnect` / `early EOF` partway through the
+# pack, which reads like a broken build but is just the transfer giving up.
 WORKDIR /opt/arduino/hardware/espressif
-RUN git clone --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32
+RUN git clone --depth=1 --branch $ESP32_VERSION https://github.com/espressif/arduino-esp32.git esp32
 WORKDIR /opt/arduino/hardware/espressif/esp32
 RUN git submodule update --init --recursive \
  && rm -rf ./**/examples/** ./.git
