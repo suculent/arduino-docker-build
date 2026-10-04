@@ -34,6 +34,12 @@ commands:
       - run:
           name: thinx.yml loader test (cmd.sh never evals thinx.yml)
           command: docker run --rm "<< parameters.image >>" /opt/tests/thinx-yml-loader.sh
+      # Seconds, no compile: the per-device environment header must be skipped
+      # (cflags still applied) when there is no target, and never written
+      # outside the workspace. See tests/env-header.sh.
+      - run:
+          name: environment header test (never an empty or escaping target)
+          command: docker run --rm "<< parameters.image >>" /opt/tests/env-header.sh
       - run:
           name: Build-chain test (<< parameters.targets >>)
           no_output_timeout: 30m
