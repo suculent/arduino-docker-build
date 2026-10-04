@@ -184,6 +184,10 @@ which came from `bookworm`). Same pattern as `../platformio-docker-build`.
   carries devsec credentials. `cmd.sh` reads it with `thinx_yml_load` (awk,
   fixed allowlist, literal values); a new `thinx.yml` key needs a new `case`
   arm there. `tests/thinx-yml-loader.sh` guards it (plain sh, no compile).
+- **Every `libs:` list item is installed** by `arduino_install_libs`: the loader
+  joins `arduino_libs` list items with newlines, and each name goes to
+  `arduino --install-library` as one quoted argument after a charset check.
+  Never go back to `for lib in ${arduino_libs}` (word-splits and globs).
 - `*.build.log` files are local build artifacts — **do not commit them.**
 - `CHANGELOG.md` tracks `cmd.sh` build-feature versions (e.g. `cflags` support),
   not image/base-OS versions.

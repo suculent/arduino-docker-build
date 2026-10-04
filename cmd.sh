@@ -39,10 +39,15 @@ WORKDIR=$(pwd)
 #    or multi-line quoted scalar) or holds a control character other than
 #    tab (NUL included) is rejected; its variable is left as it was.
 # A list item (`- item` under a key) used to append to a bash array, and this
-# script reads ${name}, the array's first element. So a list item only sets a
-# name that has no value yet: libs: with the items "- A" and "- B" still gives
-# arduino_libs=A. Only the first listed library was ever installed, and still is.
-# A plain `libs: "A B"` gives "A B", and the install loop word-splits it.
+# script reads ${name}, the array's first element. So for every name but
+# arduino_libs a list item only sets a name that has no value yet: test: with
+# the items "- a.sh" and "- b.sh" still gives arduino_test=a.sh.
+# arduino_libs is the exception: its list items are joined with newlines, in
+# order, so libs: with "- A", "- B" and "- C" gives arduino_libs="A<NL>B<NL>C"
+# and arduino_install_libs installs all three (until 0.8.221 only the first
+# was installed). A plain `libs: "A B"` is one library named "A B". A value
+# never holds a newline of its own (multi-line values are rejected), so the
+# newline only ever separates items.
 #
 # Same awk as thinx_yml_load in the THiNX worker (services/worker/builder-lib.sh)
 # and the platformio, nodemcu and micropython builder images; keep them in step.
@@ -139,6 +144,9 @@ thinx_yml_load()
 	# expanded again, and each value is assigned, never evaluated.
 	# `[ append ] && [ already set ] || name=value` skips a list item when the
 	# name already has a value (see above); everything else assigns.
+	# arduino_libs appends list items after a newline instead.
+	thinx_yml_nl='
+'
 	while IFS= read -r thinx_yml_line
 	do
 		thinx_yml_name=${thinx_yml_line%%=*}
@@ -155,7 +163,12 @@ thinx_yml_load()
 			arduino_f_cpu) [ -n "$thinx_yml_append" ] && [ -n "${arduino_f_cpu+set}" ] || arduino_f_cpu=$thinx_yml_value ;;
 			arduino_flash_size) [ -n "$thinx_yml_append" ] && [ -n "${arduino_flash_size+set}" ] || arduino_flash_size=$thinx_yml_value ;;
 			arduino_partitions) [ -n "$thinx_yml_append" ] && [ -n "${arduino_partitions+set}" ] || arduino_partitions=$thinx_yml_value ;;
-			arduino_libs) [ -n "$thinx_yml_append" ] && [ -n "${arduino_libs+set}" ] || arduino_libs=$thinx_yml_value ;;
+			arduino_libs)
+				if [ -n "$thinx_yml_append" ] && [ -n "${arduino_libs+set}" ]; then
+					arduino_libs=$arduino_libs$thinx_yml_nl$thinx_yml_value
+				else
+					arduino_libs=$thinx_yml_value
+				fi ;;
 			arduino_source) [ -n "$thinx_yml_append" ] && [ -n "${arduino_source+set}" ] || arduino_source=$thinx_yml_value ;;
 			arduino_test) [ -n "$thinx_yml_append" ] && [ -n "${arduino_test+set}" ] || arduino_test=$thinx_yml_value ;;
 			environment_target) [ -n "$thinx_yml_append" ] && [ -n "${environment_target+set}" ] || environment_target=$thinx_yml_value ;;
@@ -164,7 +177,50 @@ thinx_yml_load()
 $thinx_yml_pairs
 THINX_YML_PAIRS
 
-	unset thinx_yml_pairs thinx_yml_line thinx_yml_name thinx_yml_value thinx_yml_append
+	unset thinx_yml_pairs thinx_yml_line thinx_yml_name thinx_yml_value thinx_yml_append thinx_yml_nl
+	return 0
+}
+
+# arduino_install_libs ARDUINO: installs each library in $arduino_libs (one
+# name per line, see thinx_yml_load) with `ARDUINO --install-library NAME`, in
+# order; THiNX when $arduino_libs is empty.
+#
+# Each name is passed as one quoted argument: no word-splitting, no globbing,
+# and arduino's stdin is /dev/null, not the list. Blanks around a name are
+# trimmed. A name is installed only if it matches, in the C locale,
+#   ^[A-Za-z0-9_][A-Za-z0-9 _.-]*(:[A-Za-z0-9._+-]+)?$   (at most 128 chars)
+# i.e. an Arduino library name (letters, digits, space, _ . -; it must not
+# start with a dash or a space) with an optional :version, which is what
+# `arduino --install-library name[:version]` takes. Anything else, a comma
+# (arduino would read it as a second library) included, is skipped with a
+# "Skipping library" line. A failed install (library not available, or the
+# same version already installed: arduino exits 1) is logged and the next one
+# runs. Returns 0. Plain POSIX sh, so tests/thinx-yml-loader.sh can run it.
+arduino_install_libs()
+{
+	arduino_install_list=${arduino_libs:-THiNX}
+	while IFS= read -r arduino_install_lib
+	do
+		arduino_install_lib=${arduino_install_lib#"${arduino_install_lib%%[! 	]*}"}
+		arduino_install_lib=${arduino_install_lib%"${arduino_install_lib##*[! 	]}"}
+		[ -n "$arduino_install_lib" ] || continue
+		if [ "${#arduino_install_lib}" -gt 128 ] ||
+			! printf '%s\n' "$arduino_install_lib" |
+				LC_ALL=C grep -Eq '^[A-Za-z0-9_][A-Za-z0-9 _.-]*(:[A-Za-z0-9._+-]+)?$'
+		then
+			echo "Skipping library '$arduino_install_lib': not a valid library name[:version]"
+			continue
+		fi
+		echo "Installing library $arduino_install_lib..."
+		if "$1" --install-library "$arduino_install_lib" < /dev/null; then
+			:
+		else
+			echo "Library $arduino_install_lib not installed (arduino exited $?)"
+		fi
+	done <<THINX_LIBS
+$arduino_install_list
+THINX_LIBS
+	unset arduino_install_list arduino_install_lib
 	return 0
 }
 
@@ -230,7 +286,7 @@ else
     echo "- ENVOUT: ${ENVOUT}"
   fi
 
-  echo "- libs: ${arduino_libs}"
+  echo "- libs: ${arduino_libs//$'\n'/, }"
 
   if [[ ! -z ${arduino_flash_ld} ]]; then
     echo "- flash_ld: ${arduino_flash_ld} (esp8266)"
@@ -310,18 +366,11 @@ if [ -d "./lib" ]; then
     # cp -fR ./lib8266/** /opt/arduino/libraries # should be ESP8266 only!
 fi
 
-# Use default library if none set in thinx.yml
-if [ -z "${arduino_libs}" ]; then
-    arduino_libs="THiNX"
-fi
-
-# Install managed libraries from thinx.yml
-for lib in ${arduino_libs}; do
-  echo "Installing library $lib..."
-  set +e
-	/opt/arduino/arduino --install-library $lib
-  set -e
-done
+# Install managed libraries from thinx.yml (THiNX when none are set).
+arduino_install_libs /opt/arduino/arduino
+# The old install loop ran `set -e` after each library and left it on, and the
+# test-script step below relies on it ("Breaks build in case of failure").
+set -e
 
 #echo "Installed libraries:"
 #ls -la "/opt/arduino/libraries"
