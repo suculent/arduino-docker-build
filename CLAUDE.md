@@ -188,6 +188,13 @@ which came from `bookworm`). Same pattern as `../platformio-docker-build`.
   joins `arduino_libs` list items with newlines, and each name goes to
   `arduino --install-library` as one quoted argument after a charset check.
   Never go back to `for lib in ${arduino_libs}` (word-splits and globs).
+- **The per-device environment header can be absent.** `env_header_target`
+  picks `environment: target:` (relative, inside the workspace), else an
+  `environment.h` outside `build/`/`.pio/`, else none: the header is skipped
+  with one log line and the build goes on. `cflags` are read separately by
+  `env_cflags`, so they apply either way. Never print environment.json values
+  (or jq's stderr on it). Same functions as the platformio image; keep them in
+  step. `tests/env-header.sh` guards it (plain sh + jq, no compile).
 - `*.build.log` files are local build artifacts — **do not commit them.**
 - `CHANGELOG.md` tracks `cmd.sh` build-feature versions (e.g. `cflags` support),
   not image/base-OS versions.

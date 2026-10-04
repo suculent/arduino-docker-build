@@ -224,6 +224,126 @@ THINX_LIBS
 	return 0
 }
 
+# --- per-device environment header --------------------------------------------
+#
+# When the device has environment variables, the THiNX API writes them to
+# environment.json, and they become a C header of
+#   #define ENVIRONMENT_<KEY> <JSON value>
+# lines (keys sorted, upper-cased). The values may be credentials: nothing
+# here prints them.
+
+# env_header_target WORKSPACE TARGET: sets ENVOUT to the header to write, or
+# to "" when there is none (the header is then skipped and the build goes on).
+#  - TARGET set (thinx.yml environment: target:, e.g. src/environment.h): the
+#    file WORKSPACE/TARGET. Refused when TARGET is absolute, has a ".."
+#    component or no file name, when its directory is missing or resolves
+#    (symlinks followed) outside WORKSPACE, or when it is a symlink or not a
+#    regular file. A refused TARGET is not replaced by environment.h.
+#  - TARGET empty: the first regular file named environment.h under
+#    WORKSPACE, the build/ and .pio/ output directories excluded.
+# Prints one line when there is no header. Plain POSIX sh. Returns 0.
+env_header_target()
+{
+	ENVOUT=
+	env_header_why=
+	env_header_ws=$(cd "$1" 2>/dev/null && pwd -P) || env_header_ws=
+	if [ -z "$env_header_ws" ]; then
+		echo "Per-device environment header skipped: no workspace $1."
+	elif [ -n "$2" ]; then
+		case "$2" in
+			/*) env_header_why="an absolute path" ;;
+			..|../*|*/..|*/../*) env_header_why="a '..' path" ;;
+			.|*/|*/.) env_header_why="no file name" ;;
+		esac
+		if [ -z "$env_header_why" ]; then
+			case "$2" in
+				*/*) env_header_dir=${2%/*} ;;
+				*) env_header_dir=. ;;
+			esac
+			env_header_dir=$(cd "$env_header_ws" && cd -P "./$env_header_dir" 2>/dev/null && pwd -P) ||
+				env_header_dir=
+			case "$env_header_dir" in
+				"") env_header_why="its directory does not exist" ;;
+				"$env_header_ws"|"$env_header_ws"/*) ;;
+				*) env_header_why="its directory is outside the workspace" ;;
+			esac
+		fi
+		if [ -z "$env_header_why" ]; then
+			env_header_path=$env_header_dir/${2##*/}
+			if [ -L "$env_header_path" ]; then
+				env_header_why="a symlink"
+			elif [ -e "$env_header_path" ] && [ ! -f "$env_header_path" ]; then
+				env_header_why="not a regular file"
+			else
+				ENVOUT=$env_header_path
+			fi
+		fi
+		[ -z "$env_header_why" ] ||
+			echo "Refusing environment target '$2' ($env_header_why); per-device environment header skipped."
+	else
+		env_header_path=$(find "$env_header_ws" \( -path "$env_header_ws/build" -o -path "$env_header_ws/.pio" \) -prune \
+			-o -name environment.h -type f -print 2>/dev/null | head -n 1)
+		ENVOUT=$env_header_path
+		[ -n "$ENVOUT" ] ||
+			echo "No environment target in thinx.yml and no environment.h in the workspace; per-device environment header skipped."
+	fi
+	unset env_header_why env_header_ws env_header_dir env_header_path
+	return 0
+}
+
+# env_header_generate WORKSPACE ENVFILE TARGET [SKIPKEY...]: writes the header
+# for ENVFILE (environment.json) to the file env_header_target picks. Keys
+# SKIPKEY... are left out, and so are keys that are not made of letters,
+# digits and _ (those are named in the log; values never are). Without
+# ENVFILE nothing is written. An ENVFILE that is not a JSON object gives a
+# header with no defines; jq's own errors are dropped, as they can quote the
+# input. Returns 0.
+env_header_generate()
+{
+	if [ ! -f "$2" ]; then
+		echo "No environment.json found"
+		return 0
+	fi
+	env_header_target "$1" "$3"
+	[ -n "$ENVOUT" ] || return 0
+	env_header_file=$2
+	shift 3
+	echo "Generating per-device environment headers to:" "$ENVOUT"
+	if ! printf '%s\n' '/* This file is auto-generated. */' > "$ENVOUT"; then
+		echo "Per-device environment header not written."
+		unset env_header_file
+		return 0
+	fi
+	if ! jq -r --arg skip "$*" '
+		if type != "object" then error("not an object") else . end
+		| ($skip | split(" ")) as $skipped
+		| keys[] as $k
+		| select(any($skipped[]; . == $k) | not)
+		| select($k | test("^[A-Za-z0-9_]+$"))
+		| "#define ENVIRONMENT_\($k | ascii_upcase) \(.[$k] | tojson)"
+	' "$env_header_file" >> "$ENVOUT" 2>/dev/null; then
+		echo "environment.json is not a JSON object; the per-device environment header has no defines."
+	fi
+	env_header_bad=$(jq -r '[keys[] | select(test("^[A-Za-z0-9_]+$") | not) | @json] | join(", ")' \
+		"$env_header_file" 2>/dev/null) || env_header_bad=
+	[ -z "$env_header_bad" ] ||
+		echo "Skipping environment variables whose names are not letters, digits and _: $env_header_bad"
+	unset env_header_file env_header_bad
+	return 0
+}
+
+# env_cflags ENVFILE: appends the "cflags" value of ENVFILE (environment.json),
+# raw (jq -r, no JSON quotes), to CFLAGS; it is passed later as
+# --pref compiler.cpp.extra_flags. Read on its own, so cflags apply whether or
+# not a header is written. Returns 0.
+env_cflags()
+{
+	if [ -f "$1" ] && jq -e 'type == "object" and has("cflags")' "$1" > /dev/null 2>&1; then
+		CFLAGS=$CFLAGS$(jq -r '.cflags' "$1" 2>/dev/null)
+	fi
+	return 0
+}
+
 set +e # don't skip errors ("Selected library is not available" on install)
 
 #
@@ -280,10 +400,9 @@ else
     TEST_SCRIPT="${arduino_test}"
   fi
 
-  # output filename for the per-device environment file
+  # file for the per-device environment header (see env_header_target)
   if [ ! -z "${environment_target}" ]; then
-    ENVOUT="${WORKDIR}/${environment_target}" # e.g. src/env.h
-    echo "- ENVOUT: ${ENVOUT}"
+    echo "- environment target: ${environment_target}"
   fi
 
   echo "- libs: ${arduino_libs//$'\n'/, }"
@@ -300,39 +419,12 @@ else
   echo "- test_script: $TEST_SCRIPT"
 fi
 
-# Parse environment.json
+# Per-device environment header (see env_header_target): thinx.yml's
+# environment: target:, else an environment.h in the workspace, else skipped.
+# cflags is not a define: env_cflags passes it to the compiler instead.
 ENVFILE=$(find_input "environment.json")
-ENVOUT=$(find_input "environment.h")
-
-# echo "Will write to ENVOUT ${ENVOUT}"
-
-if [[ ! -f $ENVFILE ]]; then
-  echo "No environment.json found"
-else
-  echo "Generating per-device environment headers to: ${ENVOUT}"
-  echo
-  # Generate C-header from key-value JSON object
-  arr=()
-  # Print out header, will clear previous contents.
-  echo "Touching file at ${ENVOUT}"
-  touch ${ENVOUT}
-  echo "/* This file is auto-generated. */" > ${ENVOUT}
-  while IFS='' read -r keyname; do
-    arr+=("$keyname")
-    VAL=$(jq '.'$keyname $ENVFILE)
-
-    if [[ ${keyname} == "cflags" ]]; then
-      # Append the raw cflags value to CFLAGS (passed later as
-      # --pref compiler.cpp.extra_flags). Use jq -r so the compiler flags are
-      # not wrapped in literal JSON quotes. NOTE: the leading "$" here used to
-      # expand $CFLAGS and run "+=..." as a command, silently dropping cflags.
-      CFLAGS+=$(jq -r '.cflags' "$ENVFILE")
-    else
-      NAME=$(echo "environment_${keyname}" | tr '[:lower:]' '[:upper:]')
-      echo "#define ${NAME}" "$VAL" >> ${ENVOUT}
-    fi
-  done < <(jq -r 'keys[]' $ENVFILE)
-fi
+env_header_generate "$WORKDIR" "$ENVFILE" "${environment_target}" cflags
+env_cflags "$ENVFILE"
 
 # TODO: if platform = esp8266 (dunno why but this lib collides with ESP8266Wifi)
 rm -rf /opt/arduino/libraries/WiFi

@@ -167,6 +167,7 @@ You can pass the following optional parameters to the Docker build like so `dock
 
 The builder is able to re-create designated environment.h (exact filename should be defined in thinx.yml) from environment.json.
 The environment.h is used to customize variables in project.
+The header goes to `environment: target:` (a path relative to the workspace; an absolute path, a `..` component, a symlink or a directory outside the workspace is refused), else to the first `environment.h` in the workspace outside `build/`. With neither, the header is skipped with one log line and the build continues.
 
 In case you need to modify GCC CFLAGS using environment variables, use the `cflags` variable which will be passed to Arduino builder since 0.8.0.
 
