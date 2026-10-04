@@ -15,6 +15,12 @@
 #  - legit thinx.yml layouts give the same values as the old parse_yaml + eval;
 #  - loading prints nothing (devsec values are Wi-Fi credentials and keys).
 #
+# It also runs cmd.sh's library install step (arduino_install_libs) with a stub
+# in place of the arduino binary, recording each call's argv, and checks that
+# every library in a libs: list is installed, in order, each name as one
+# argument, and that a name outside the library-name charset is skipped and
+# never reaches arduino or a shell.
+#
 # Plain POSIX sh: runs under bash, dash or busybox sh, with any awk. No Docker.
 #   sh tests/thinx-yml-loader.sh
 # In the image: /opt/tests/thinx-yml-loader.sh (cmd.sh is /opt/cmd.sh).
@@ -53,8 +59,8 @@ LOAD_LINE=$(grep -E '^[[:space:]]*(eval[[:space:]].*parse_yaml|thinx_yml_load[[:
 
 # load DIR: runs the load step on DIR/thinx.yml with DIR as the working
 # directory and set -e on. Writes "name=value" or "name unset" for every name
-# in NAMES and UNREAD to DIR/vars, and whatever the load step printed to
-# DIR/output. The names are this test's own, never read from a yml file.
+# in NAMES and UNREAD to DIR/vars (one line each; a newline inside a value is
+# written as <NL>), and whatever the load step printed to DIR/output. The names are this test's own, never read from a yml file.
 load() {
 	(
 		cd "$1" || exit 1
@@ -67,7 +73,9 @@ load() {
 		set +e
 		for name in $NAMES $UNREAD; do
 			if eval "[ -n \"\${$name+set}\" ]"; then
-				eval "printf '%s=%s\n' \"\$name\" \"\$$name\""
+				eval "v=\$$name"
+				printf '%s=' "$name"
+				printf '%s\n' "$v" | awk 'NR > 1 { printf "<NL>" } { printf "%s", $0 } END { print "" }'
 			else
 				printf '%s unset\n' "$name"
 			fi
@@ -194,8 +202,8 @@ arduino:
     - x"); touch PWNED; #
 EOF
 no_marker 'list items do not run'
-has 'arduino_libs=$(touch PWNED)' && ok 'list item is kept literally' ||
-	not_ok 'list item is kept literally'
+has 'arduino_libs=$(touch PWNED)<NL>x"); touch PWNED; #' && ok 'list items are kept literally' ||
+	not_ok 'list items are kept literally'
 
 newcase marker-unread <<'EOF'
 devsec:
@@ -270,13 +278,27 @@ expect 'spec/test_repositories/arduino layout' \
 	arduino_flash_ld=eagle.flash.4m1m.ld arduino_f_cpu=80000000L arduino_flash_size=16M \
 	arduino_libs=ArduinoJSON arduino_test=unit-test.sh
 
-# A libs list used to append to a bash array, and cmd.sh reads ${arduino_libs},
-# the first element: only the first item was ever installed. Kept as it was.
+# A libs list delivers every item, in order, one per line (261004-om7: it used
+# to deliver only the first, so only the first library was ever installed).
 newcase libs-list < /dev/null
 printf 'arduino:\n  platform: esp8266\n  libs:\n    - ArduinoJSON\n    - WiFiManager' \
 	> "$CASE/thinx.yml"
-expect 'libs list: the first item, as before (file without final newline)' \
-	arduino_platform=esp8266 arduino_libs=ArduinoJSON
+expect 'libs list: every item, newline-joined (file without final newline)' \
+	arduino_platform=esp8266 'arduino_libs=ArduinoJSON<NL>WiFiManager'
+
+newcase libs-list-three <<'EOF'
+arduino:
+  libs:
+    - ArduinoJSON
+    - WiFiManager
+    - Adafruit GFX Library
+  test:
+    - first.sh
+    - second.sh
+EOF
+expect 'libs list of three: all, in order; other lists still keep the first item' \
+	'arduino_libs=ArduinoJSON<NL>WiFiManager<NL>Adafruit GFX Library' \
+	arduino_test=first.sh
 
 newcase libs-scalar <<'EOF'
 arduino:
@@ -299,7 +321,7 @@ arduino:
   platform:   esp8266
 EOF
 expect 'quoted list item, \" and \\ escapes, single quotes kept, extra spaces' \
-	arduino_libs=Adafruit_GFX 'arduino_board=a"b\c\d' "arduino_arch='esp8266'" \
+	'arduino_libs=Adafruit_GFX<NL>second' 'arduino_board=a"b\c\d' "arduino_arch='esp8266'" \
 	arduino_platform=esp8266
 
 newcase last-wins <<'EOF'
@@ -318,6 +340,178 @@ expect 'CRLF line ends are dropped, tab is kept' \
 newcase missing-file < /dev/null
 rm -f "$CASE/thinx.yml"
 expect 'a missing thinx.yml sets nothing'
+
+# --- library install: arduino_install_libs -------------------------------------
+
+# The stub stands in for /opt/arduino/arduino. It appends one line per call to
+# $ARDUINO_CALLS: the argument count, then each argument after a "|". It reads
+# its stdin, so a loop that feeds the library list on stdin would lose the
+# rest of the list. "FailingLib" exits 1, as arduino does for a library that
+# is not available or already installed.
+STUB=$WORK/arduino-stub
+cat > "$STUB" <<'EOF'
+#!/bin/sh
+{ printf '%s' "$#"; for a in "$@"; do printf '|%s' "$a"; done; echo; } >> "$ARDUINO_CALLS"
+cat > /dev/null
+case "$2" in FailingLib) exit 1 ;; esac
+exit 0
+EOF
+chmod +x "$STUB"
+
+if grep -q '^arduino_install_libs[[:space:]]*()' "$FUNCS"; then
+	ok 'cmd.sh defines arduino_install_libs'
+else
+	not_ok 'cmd.sh defines arduino_install_libs' 'the install step is not a top-level function the test can run'
+fi
+
+# install DIR: the load step, then arduino_install_libs with the stub, in DIR
+# with set -e on. Calls go to DIR/calls, what the step printed to
+# DIR/install-output, and "status N" (its exit status) to DIR/install-status.
+install() {
+	: > "$1/calls"
+	(
+		cd "$1" || exit 1
+		for name in $NAMES $UNREAD; do unset "$name"; done
+		YMLFILE=$1/thinx.yml
+		WORKDIR=$1
+		ARDUINO_CALLS=$1/calls
+		export ARDUINO_CALLS
+		. "$FUNCS"
+		set -e
+		eval "$LOAD_LINE"
+		st=0
+		arduino_install_libs "$STUB" || st=$?
+		echo "status $st" > "$1/install-status"
+	) < /dev/null > "$1/install-output" 2>&1
+}
+
+# expect_calls DESC LINE...: after install, DIR/calls holds exactly the LINEs,
+# in order, the step returned 0, and no marker file exists.
+expect_calls() {
+	desc=$1; shift
+	install "$CASE"
+	: > "$CASE/expected"
+	for line in "$@"; do printf '%s\n' "$line" >> "$CASE/expected"; done
+	why=""
+	cmp -s "$CASE/expected" "$CASE/calls" ||
+		why="$why [calls: $(awk '{ printf "%s; ", $0 }' "$CASE/calls")]"
+	grep -qx 'status 0' "$CASE/install-status" 2>/dev/null ||
+		why="$why [did not return 0: $(head -c 300 "$CASE/install-output")]"
+	[ -e "$CASE/PWNED" ] && why="$why [MARKER CREATED: a library name ran as shell]"
+	if [ -z "$why" ]; then ok "$desc"; else not_ok "$desc" "$why"; fi
+}
+
+newcase install-three <<'EOF'
+arduino:
+  libs:
+    - ArduinoJSON
+    - WiFiManager
+    - Adafruit GFX Library
+EOF
+expect_calls 'a list of three installs all three, in order, each name one argument' \
+	'2|--install-library|ArduinoJSON' \
+	'2|--install-library|WiFiManager' \
+	'2|--install-library|Adafruit GFX Library'
+
+newcase install-firmware-example <<'EOF'
+arduino:
+  platform: esp8266
+  arch: esp8266
+  board: d1_mini
+  libs:
+    - ArduinoJSON
+    - WiFiManager
+EOF
+expect_calls 'the firmware example installs WiFiManager too' \
+	'2|--install-library|ArduinoJSON' \
+	'2|--install-library|WiFiManager'
+
+newcase install-scalar <<'EOF'
+arduino:
+  libs: ArduinoJson
+EOF
+expect_calls 'a scalar libs value installs one library' \
+	'2|--install-library|ArduinoJson'
+
+newcase install-scalar-spaces <<'EOF'
+arduino:
+  libs: "Adafruit GFX Library"
+EOF
+expect_calls 'a scalar name with spaces is one argument, not word-split' \
+	'2|--install-library|Adafruit GFX Library'
+
+newcase install-version-trim <<'EOF'
+arduino:
+  libs:
+    - ArduinoJson:6.21.3
+    - "  PubSubClient  "
+    - lib_with-all.chars_1:1.0.0-rc.1+b2
+EOF
+expect_calls 'name:version is accepted; surrounding blanks are trimmed' \
+	'2|--install-library|ArduinoJson:6.21.3' \
+	'2|--install-library|PubSubClient' \
+	'2|--install-library|lib_with-all.chars_1:1.0.0-rc.1+b2'
+
+newcase install-default <<'EOF'
+arduino:
+  platform: esp8266
+EOF
+expect_calls 'no libs: the THiNX library, as before' \
+	'2|--install-library|THiNX'
+
+newcase install-missing-file < /dev/null
+rm -f "$CASE/thinx.yml"
+expect_calls 'no thinx.yml: the THiNX library' \
+	'2|--install-library|THiNX'
+
+newcase install-failing <<'EOF'
+arduino:
+  libs:
+    - FailingLib
+    - AfterFailure
+EOF
+expect_calls 'a failed install does not stop the next one, and the step returns 0' \
+	'2|--install-library|FailingLib' \
+	'2|--install-library|AfterFailure'
+
+long=$(awk 'BEGIN { for (i = 0; i < 129; i++) printf "a" }')
+newcase install-hostile <<EOF
+arduino:
+  libs:
+    - \$(touch PWNED)
+    - \`touch PWNED\`
+    - x; touch PWNED
+    - x"); touch PWNED; #
+    - x|touch PWNED
+    - x&touch PWNED
+    - *
+    - Lib?
+    - [ab]
+    - --pref=build.path=/tmp
+    - -x
+    - A,B
+    - ../../etc/passwd
+    - /abs/path
+    - user@lib
+    - $long
+    - Good
+EOF
+touch "$CASE/GlobMe1" "$CASE/GlobMe2"
+expect_calls 'names outside the charset never reach arduino or a shell; the valid one does' \
+	'2|--install-library|Good'
+skips=$(grep -c '^Skipping library' "$CASE/install-output" 2>/dev/null)
+if [ "${skips:-0}" -eq 16 ]; then
+	ok 'each rejected name is skipped with a log line (16)'
+else
+	not_ok 'each rejected name is skipped with a log line (16)' "got ${skips:-0}: $(head -c 400 "$CASE/install-output")"
+fi
+
+newcase install-only-hostile <<'EOF'
+arduino:
+  libs:
+    - $(touch PWNED)
+EOF
+expect_calls 'a list of only rejected names installs nothing (no THiNX fallback)'
 
 echo "1..$n"
 if [ "$failed" -gt 0 ]; then
