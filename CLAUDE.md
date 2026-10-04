@@ -180,6 +180,10 @@ which came from `bookworm`). Same pattern as `../platformio-docker-build`.
 
 ## Conventions
 
+- **`thinx.yml` is never eval'd or sourced.** It is repository content and
+  carries devsec credentials. `cmd.sh` reads it with `thinx_yml_load` (awk,
+  fixed allowlist, literal values); a new `thinx.yml` key needs a new `case`
+  arm there. `tests/thinx-yml-loader.sh` guards it (plain sh, no compile).
 - `*.build.log` files are local build artifacts — **do not commit them.**
 - `CHANGELOG.md` tracks `cmd.sh` build-feature versions (e.g. `cflags` support),
   not image/base-OS versions.
