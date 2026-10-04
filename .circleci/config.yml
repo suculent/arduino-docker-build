@@ -29,6 +29,11 @@ commands:
           the positive tests could silently stop asserting anything. Needs an
           image carrying the esp8266 core.
     steps:
+      # Seconds, no compile: cmd.sh must read thinx.yml (repository content
+      # carrying devsec credentials) without eval. See tests/thinx-yml-loader.sh.
+      - run:
+          name: thinx.yml loader test (cmd.sh never evals thinx.yml)
+          command: docker run --rm "<< parameters.image >>" /opt/tests/thinx-yml-loader.sh
       - run:
           name: Build-chain test (<< parameters.targets >>)
           no_output_timeout: 30m
